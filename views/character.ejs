@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title><%= name %></title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; }
+    #container { width: 100%; height: 100%; }
+    #container canvas { display: block; }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+
+  <script src="/public/spine-player/spine-player.umd.js"></script>
+  <script>
+    (function() {
+      var container = document.getElementById('container');
+      var player = new SpinePlayer(container, {
+        type: 'auto',
+        background: { color: 'rgba(0,0,0,0)' }
+      });
+
+      var defaultAnim = '<%- defaultAnim %>';
+      var loop = <%= loop %>;
+      var touchAnimName = '<%- touchAnim %>';
+      var animations = [];
+      var currentIdleAnim = defaultAnim;
+      var isTouchPlaying = false;
+
+      function sendParent(data) {
+        window.parent.postMessage(data, '*');
+      }
+
+      player.loadSpine({
+        assets: {
+          skel: '<%- skel %>',
+          atlas: '<%- atlas %>',
+          textures: ['<%- png %>'],
+        },
+        animationName: defaultAnim || undefined,
+        loop: loop,
+        autoPlay: true,
+        hooks: {
+          onLoaded: function() {
+            animations = player.getAnimations();
+            if (!currentIdleAnim) {
+              currentIdleAnim = animations[0] || '';
+            }
+            sendParent({ type: 'ready', animations: animations });
+          },
+          onComplete: function() {
+            if (isTouchPlaying) {
+              isTouchPlaying = false;
+              player.setAnimationName(currentIdleAnim, true);
+              sendParent({ type: 'ended', animation: touchAnimName });
+            }
+          },
+        },
+      });
+
+      player.htmlCanvas.addEventListener('click', function() {
+        if (!player.hasAnimation(touchAnimName)) return;
+        isTouchPlaying = true;
+        player.playAnimation(touchAnimName, false);
+        sendParent({ type: 'playing', animation: touchAnimName });
+      });
+
+      window.addEventListener('message', function(e) {
+        var data = e.data || {};
+        switch (data.action) {
+          case 'play':
+            if (!data.animation || !player.hasAnimation(data.animation)) return;
+            player.playAnimation(data.animation, data.loop !== false);
+            break;
+          case 'setIdle':
+            if (!data.animation || !player.hasAnimation(data.animation)) return;
+            currentIdleAnim = data.animation;
+            if (!isTouchPlaying) {
+              player.setAnimationName(currentIdleAnim, true);
+            }
+            break;
+          case 'getAnimations':
+            sendParent({ type: 'animations', animations: animations });
+            break;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

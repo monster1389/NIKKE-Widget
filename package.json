@@ -1,7 +1,7 @@
 {
   "dependencies": {
+    "@esotericsoftware/spine-player": "^4.1.20",
     "ejs": "^6.0.1",
-    "express": "^5.2.1",
-    "spine-web-player": "^4.2.4"
+    "express": "^5.2.1"
   }
 }

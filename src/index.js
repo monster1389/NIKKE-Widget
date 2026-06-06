@@ -17,6 +17,16 @@ app.get('/', (req, res) => {
     .filter(name => {
       const stat = fs.statSync(path.join(assetsDir, name));
       return stat.isDirectory();
+    })
+    .map(name => {
+      const dir = path.join(assetsDir, name);
+      const files = fs.readdirSync(dir);
+      const preview = files.find(f => f === 'preview.png')
+        || files.find(f => f.endsWith('.png'));
+      return {
+        name,
+        preview: preview ? `/assets/${name}/${preview}` : null,
+      };
     });
   res.render('home', { characters });
 });

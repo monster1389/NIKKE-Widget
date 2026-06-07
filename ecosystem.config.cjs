@@ -1,9 +1,11 @@
+const config = require('./config');
+
 module.exports = {
   apps: [{
     name: 'live2d',
     script: 'src/index.js',
     env: {
-      PORT: 8090,
+      PORT: config.port,
       NODE_ENV: 'production',
     },
     autorestart: true,

@@ -1,6 +1,6 @@
 # NIKKE 看板娘
 
-Live2D Spine 角色展示服务，端口 8090。
+Live2D Spine 角色展示服务，默认端口 8090（可在 `config.js` 修改）。
 
 ## 主要功能
 
@@ -12,6 +12,8 @@ Live2D Spine 角色展示服务，端口 8090。
 ## 快速开始
 
 ### 启动
+
+端口等配置在 `config.js` 中修改，也支持环境变量 `PORT`。
 
 ```bash
 node src/index.js                          # 直接启动

@@ -1,10 +1,10 @@
 const express = require('express');
 const path = require('path');
+const config = require('../config');
 const { getCharacters, readCharacterFiles } = require('./get-characters');
 const { generatePreviews } = require('./preview-generator');
 
 const app = express();
-const PORT = process.env.PORT || 8090;
 const ASSETS_DIR = path.join(__dirname, '..', 'assets');
 const DEFAULT_ANIMATION = 'idle';
 const DEFAULT_TOUCH_ANIM = 'action';
@@ -110,9 +110,9 @@ app.use((err, req, res, next) => {
   res.status(500).send('Internal server error');
 });
 
-app.listen(PORT, () => {
-  console.log(`Live2D service running on http://localhost:${PORT}`);
+app.listen(config.port, () => {
+  console.log(`Live2D service running on http://localhost:${config.port}`);
 
   const characters = listCharacters();
-  generatePreviews(characters, `http://localhost:${PORT}`);
+  generatePreviews(characters, `http://localhost:${config.port}`);
 });

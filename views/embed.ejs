@@ -1,7 +1,81 @@
 (function() {
+  // ── 1. 推导 BASE 地址 ──────────────────────────────────
+  var scriptEl = document.currentScript;
+  var BASE = scriptEl.src.replace(/\/embed\/.*$/, '');
   var CONTAINER_ID = 'live2d-widget';
 
-  function init() {
+  // ── 2. 注入 CSS ────────────────────────────────────────
+  var style = document.createElement('style');
+  style.textContent = [
+    '#' + CONTAINER_ID + ' { z-index: 9999; pointer-events: none; }',
+    '#' + CONTAINER_ID + ' canvas { pointer-events: auto; }',
+    '#live2d-close, #live2d-restore {',
+    '  position: fixed; bottom: 8px; right: 8px;',
+    '  width: 22px; height: 22px; padding: 0;',
+    '  border: none; border-radius: 50%;',
+    '  background: rgba(0,0,0,0.4); color: #fff;',
+    '  font-size: 14px; line-height: 22px;',
+    '  text-align: center; cursor: pointer; z-index: 9999;',
+    '}',
+    '#live2d-close:hover, #live2d-restore:hover { background: rgba(0,0,0,0.7); }'
+  ].join('\n');
+  document.head.appendChild(style);
+
+  // ── 3. 创建按钮 ────────────────────────────────────────
+  var showControls = <%- controls %>;
+  var closeBtn, restoreBtn;
+  if (showControls) {
+    closeBtn = document.createElement('button');
+    closeBtn.id = 'live2d-close';
+    closeBtn.textContent = '×';
+    closeBtn.title = '关闭看板娘';
+    closeBtn.onclick = function() {
+      var c = document.getElementById(CONTAINER_ID);
+      if (c) c.style.display = 'none';
+      closeBtn.style.display = 'none';
+      restoreBtn.style.display = '';
+    };
+    document.body.appendChild(closeBtn);
+
+    restoreBtn = document.createElement('button');
+    restoreBtn.id = 'live2d-restore';
+    restoreBtn.textContent = '○';
+    restoreBtn.title = '显示看板娘';
+    restoreBtn.style.display = 'none';
+    restoreBtn.onclick = function() {
+      var c = document.getElementById(CONTAINER_ID);
+      if (c) c.style.display = '';
+      closeBtn.style.display = '';
+      restoreBtn.style.display = 'none';
+    };
+    document.body.appendChild(restoreBtn);
+  }
+
+  // ── 4. 自动调整容器尺寸 ────────────────────────────────
+  var targetHeight = <%- targetHeight %>;
+  if (!targetHeight) {
+    targetHeight = window.innerWidth < 768 ? 250 : 400;
+  }
+
+  function onSize(width, height) {
+    var container = document.getElementById(CONTAINER_ID);
+    if (!container) return;
+    var scale = targetHeight / height;
+    container.style.width = Math.round(width * scale) + 'px';
+    container.style.height = Math.round(height * scale) + 'px';
+  }
+
+  // 监听 postMessage size 事件（player 通过 window.parent.postMessage 发送，
+  // 在无 iframe 场景下 window.parent === window）
+  window.addEventListener('message', function(e) {
+    var d = e.data || {};
+    if (d.type === 'size' && d.width && d.height) {
+      onSize(d.width, d.height);
+    }
+  });
+
+  // ── 5. 加载依赖并初始化角色 ────────────────────────────
+  function initPlayer() {
     var container = document.getElementById(CONTAINER_ID);
     if (!container) {
       console.error('Live2D embed: container #' + CONTAINER_ID + ' not found');
@@ -11,5 +85,15 @@
     <%- include('player-core', { viewportMode: 'raw', sendSize: true }) %>
   }
 
-  init();
+  if (window.spine) {
+    initPlayer();
+  } else {
+    var s = document.createElement('script');
+    s.src = BASE + '/public/spine-player/spine-player.js';
+    s.onload = initPlayer;
+    s.onerror = function() {
+      console.error('Live2D embed: failed to load spine-player.js');
+    };
+    document.head.appendChild(s);
+  }
 })();

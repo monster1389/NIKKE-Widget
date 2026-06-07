@@ -57,8 +57,13 @@
               vp.height = frozenViewport.height;
             } else {
               origCalcViewport(anim, vp);
+              var px = vp.width * 0.2;
+              var py = vp.height * 0.2;
               frozenViewport = {
-                x: vp.x, y: vp.y, width: vp.width, height: vp.height,
+                x: vp.x - px,
+                y: vp.y - py,
+                width: vp.width + px * 2,
+                height: vp.height + py * 2,
               };
             }
           };

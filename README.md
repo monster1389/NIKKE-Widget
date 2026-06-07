@@ -13,9 +13,9 @@
 
 | 参数 | 默认 | 说明 |
 |------|------|------|
-| animation | 模型首个动画 | 待机动画 |
+| animation | idle | 待机动画 |
 | loop | true | 待机循环 |
-| touch | touch | 点击播放的动画 |
+| touch | action | 点击播放的动画 |
 
 ## postMessage API
 

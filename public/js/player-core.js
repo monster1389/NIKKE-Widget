@@ -144,9 +144,7 @@
         });
 
         p.canvas.addEventListener('click', function() {
-          if (actionPlaying) return;
-          var hasAnim = animations.indexOf(touchAnimName) >= 0;
-          if (!hasAnim) return;
+          if (animations.indexOf(touchAnimName) < 0) return;
           actionPlaying = true;
           player.setAnimation(touchAnimName, false);
           sendParent({ type: 'playing', animation: touchAnimName });

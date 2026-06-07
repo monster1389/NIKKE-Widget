@@ -11,7 +11,16 @@ let scraping = false;
 
 const NAME_RE = /^[a-zA-Z0-9_-]+$/;
 
+function checkReadonly(req, res) {
+  if (req.isReadonly) {
+    res.status(403).json({ error: 'Write operations not allowed via domain' });
+    return true;
+  }
+  return false;
+}
+
 router.delete('/characters/:name', (req, res) => {
+  if (checkReadonly(req, res)) return;
   const { name } = req.params;
   if (!NAME_RE.test(name)) {
     return res.status(400).json({ error: 'Invalid character name' });
@@ -29,6 +38,7 @@ router.delete('/characters/:name', (req, res) => {
 });
 
 router.put('/characters/:name', (req, res) => {
+  if (checkReadonly(req, res)) return;
   const { name } = req.params;
   const { newName } = req.body;
 
@@ -54,6 +64,7 @@ router.put('/characters/:name', (req, res) => {
 });
 
 router.post('/scrape', express.json(), async (req, res) => {
+  if (checkReadonly(req, res)) return;
   const { url, name } = req.body;
 
   if (!url || !name) {

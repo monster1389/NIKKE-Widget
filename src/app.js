@@ -14,6 +14,7 @@ function createApp() {
   app.set('view engine', 'ejs');
   app.set('views', path.join(__dirname, '..', 'views'));
 
+  app.use(express.json());
   app.use(cors());
   app.use(domainGuard);
   app.use('/assets', express.static(config.assetsDir));

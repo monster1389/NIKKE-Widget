@@ -144,12 +144,14 @@
   <h1>NIKKE 看板娘</h1>
   <p class="subtitle">从 GameKee 下载角色，嵌入你的页面</p>
 
+  <% if (!readonly) { %>
   <div class="scraper-form" id="scraper-form">
     <input class="url-input" type="text" id="scrape-url" placeholder="GameKee URL, 如 https://www.gamekee.com/nikke/tj/703135.html">
     <input class="name-input" type="text" id="scrape-name" placeholder="角色名, 如 anis">
     <button id="scrape-btn" onclick="startScrape()">下载</button>
   </div>
   <div class="scrape-status" id="scrape-status"></div>
+  <% } %>
 
   <div class="grid">
     <% characters.forEach(function(c) { %>
@@ -162,10 +164,12 @@
           <% } %>
           <span><%= c.name %></span>
         </a>
+        <% if (!readonly) { %>
         <div class="card-actions">
           <button class="action-btn rename-btn" onclick="renameCharacter('<%= c.name %>')" title="重命名">✏</button>
           <button class="action-btn delete-btn" onclick="deleteCharacter('<%= c.name %>')" title="删除">🗑</button>
         </div>
+        <% } %>
       </div>
     <% }); %>
   </div>

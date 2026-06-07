@@ -12,7 +12,10 @@ function parseBoolQuery(val) {
 }
 
 router.get('/', (req, res) => {
-  res.render('home', { characters: listCharacters(config.assetsDir) });
+  res.render('home', {
+    characters: listCharacters(config.assetsDir),
+    readonly: req.isReadonly,
+  });
 });
 
 router.get('/:character', (req, res, next) => {

@@ -1,52 +1,39 @@
 const domainGuard = require('../../src/middleware/domain-guard');
 
 describe('domainGuard middleware', () => {
-  it('blocks public domain on GET /', () => {
+  it('sets isReadonly=true for public domain', () => {
     const req = { hostname: 'live2d.rpi1204.xyz', path: '/' };
-    const res = {
-      status: (code) => ({
-        send: (msg) => { res.sent = { code, msg }; }
-      }),
-      sent: null,
-    };
-    const next = () => {};
-    domainGuard(req, res, next);
-    expect(res.sent.code).toBe(403);
+    domainGuard(req, {}, () => {});
+    expect(req.isReadonly).toBe(true);
   });
 
-  it('blocks public domain on POST /api/scrape', () => {
-    const req = { hostname: 'live2d.rpi1204.xyz', path: '/api/scrape' };
-    const res = {
-      status: (code) => ({
-        send: (msg) => { res.sent = { code, msg }; }
-      }),
-      sent: null,
-    };
-    domainGuard(req, res, () => {});
-    expect(res.sent.code).toBe(403);
+  it('sets isReadonly=true for domain with subdomain', () => {
+    const req = { hostname: 'example.com', path: '/' };
+    domainGuard(req, {}, () => {});
+    expect(req.isReadonly).toBe(true);
   });
 
-  it('allows localhost on GET /', () => {
-    let called = false;
+  it('sets isReadonly=false for localhost', () => {
     const req = { hostname: 'localhost', path: '/' };
-    const res = {};
-    domainGuard(req, res, () => { called = true; });
-    expect(called).toBe(true);
+    domainGuard(req, {}, () => {});
+    expect(req.isReadonly).toBe(false);
   });
 
-  it('allows public domain on GET /:character', () => {
-    let called = false;
-    const req = { hostname: 'live2d.rpi1204.xyz', path: '/anis0' };
-    const res = {};
-    domainGuard(req, res, () => { called = true; });
-    expect(called).toBe(true);
+  it('sets isReadonly=false for 127.0.0.1', () => {
+    const req = { hostname: '127.0.0.1', path: '/' };
+    domainGuard(req, {}, () => {});
+    expect(req.isReadonly).toBe(false);
   });
 
-  it('allows public domain on GET /embed/:character.js', () => {
-    let called = false;
-    const req = { hostname: 'live2d.rpi1204.xyz', path: '/embed/anis0.js' };
-    const res = {};
-    domainGuard(req, res, () => { called = true; });
-    expect(called).toBe(true);
+  it('sets isReadonly=false for 192.168.x.x', () => {
+    const req = { hostname: '192.168.1.100', path: '/' };
+    domainGuard(req, {}, () => {});
+    expect(req.isReadonly).toBe(false);
+  });
+
+  it('sets isReadonly=false for hostname without dots (e.g. rpi)', () => {
+    const req = { hostname: 'rpi', path: '/' };
+    domainGuard(req, {}, () => {});
+    expect(req.isReadonly).toBe(false);
   });
 });

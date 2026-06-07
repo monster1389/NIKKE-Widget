@@ -166,9 +166,14 @@ app.use((err, req, res, next) => {
   res.status(500).send('Internal server error');
 });
 
-app.listen(config.port, () => {
+app.listen(config.port, async () => {
   console.log(`Live2D service running on http://localhost:${config.port}`);
 
-  const characters = listCharacters();
-  generatePreviews(characters, `http://localhost:${config.port}`);
+  try {
+    const characters = listCharacters();
+    await generatePreviews(characters, `http://localhost:${config.port}`);
+    characterCache = null;
+  } catch (err) {
+    console.warn('Preview generation on startup failed:', err.message);
+  }
 });

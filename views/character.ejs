@@ -43,11 +43,7 @@
           if (!currentIdleAnim) {
             currentIdleAnim = animations[0] || '';
           }
-          p.setAnimation(currentIdleAnim, loop);
-          p.play();
-          sendParent({ type: 'ready', animations: animations });
 
-          var origCalcViewport = p.calculateAnimationViewport.bind(p);
           var frozenViewport = null;
 
           function computeUnionBounds() {
@@ -84,6 +80,10 @@
               vp.height = frozenViewport.height;
             }
           };
+
+          p.setAnimation(currentIdleAnim, loop);
+          p.play();
+          sendParent({ type: 'ready', animations: animations });
 
           p.animationState.addListener({
             complete: function(entry) {

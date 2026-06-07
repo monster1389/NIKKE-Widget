@@ -38,6 +38,7 @@
         showLoading: false,
         success: function(p) {
           animations = p.skeleton.data.animations.map(function(a) { return a.name; });
+          console.log('Available animations:', animations);
           if (!currentIdleAnim) {
             currentIdleAnim = animations[0] || '';
           }

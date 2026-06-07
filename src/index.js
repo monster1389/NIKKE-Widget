@@ -11,34 +11,61 @@ app.set('views', path.join(__dirname, '..', 'views'));
 app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
 app.use('/public', express.static(path.join(__dirname, '..', 'public')));
 
-app.get('/', (req, res) => {
+app.get('/', (req, res, next) => {
   const assetsDir = path.join(__dirname, '..', 'assets');
-  const characters = fs.readdirSync(assetsDir)
-    .filter(name => {
-      const stat = fs.statSync(path.join(assetsDir, name));
-      return stat.isDirectory();
-    })
-    .map(name => {
-      const dir = path.join(assetsDir, name);
-      const files = fs.readdirSync(dir);
-      const preview = files.find(f => f === 'preview.png')
-        || files.find(f => f.endsWith('.png'));
-      return {
-        name,
-        preview: preview ? `/assets/${name}/${preview}` : null,
-      };
+
+  let entries;
+  try {
+    entries = fs.readdirSync(assetsDir);
+  } catch {
+    return res.render('home', { characters: [] });
+  }
+
+  const characters = [];
+  for (const name of entries) {
+    let stat;
+    try {
+      stat = fs.statSync(path.join(assetsDir, name));
+    } catch {
+      continue;
+    }
+    if (!stat.isDirectory()) continue;
+
+    const dir = path.join(assetsDir, name);
+    let files;
+    try {
+      files = fs.readdirSync(dir);
+    } catch {
+      continue;
+    }
+    const preview = files.find(f => f === 'preview.png')
+      || files.find(f => f.endsWith('.png'));
+    characters.push({
+      name,
+      preview: preview ? `/assets/${name}/${preview}` : null,
     });
+  }
   res.render('home', { characters });
 });
 
-app.get('/:character', (req, res) => {
+app.get('/:character', (req, res, next) => {
   const charDir = path.join(__dirname, '..', 'assets', req.params.character);
 
-  if (!fs.existsSync(charDir) || !fs.statSync(charDir).isDirectory()) {
-    return res.status(404).send('Character not found');
+  try {
+    if (!fs.existsSync(charDir) || !fs.statSync(charDir).isDirectory()) {
+      return res.status(404).send('Character not found');
+    }
+  } catch {
+    return next(new Error(`Failed to access character directory: ${req.params.character}`));
   }
 
-  const files = fs.readdirSync(charDir);
+  let files;
+  try {
+    files = fs.readdirSync(charDir);
+  } catch {
+    return next(new Error(`Failed to read character directory: ${req.params.character}`));
+  }
+
   const skel = files.find(f => f.endsWith('.skel'));
   const atlas = files.find(f => f.endsWith('.atlas'));
   const png = files.find(f => f.endsWith('.png'));
@@ -56,6 +83,11 @@ app.get('/:character', (req, res) => {
     loop: req.query.loop !== 'false',
     touchAnim: req.query.touch || 'action',
   });
+});
+
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err.message);
+  res.status(500).send('Internal server error');
 });
 
 app.listen(PORT, () => {

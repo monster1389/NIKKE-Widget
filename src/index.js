@@ -134,6 +134,8 @@ app.get('/embed/:character.js', (req, res, next) => {
     defaultAnim: req.query.animation || DEFAULT_ANIMATION,
     loop: parseBoolQuery(req.query.loop),
     touchAnim: req.query.touch || DEFAULT_TOUCH_ANIM,
+    controls: parseBoolQuery(req.query.controls),
+    targetHeight: parseInt(req.query.targetHeight) || null,
   });
 });
 

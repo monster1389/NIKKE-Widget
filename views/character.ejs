@@ -28,17 +28,26 @@
         window.parent.postMessage(data, '*');
       }
 
+      var origGetContext = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function(type, opts) {
+        if ((type === 'webgl' || type === 'webgl2') && (!opts || opts.premultipliedAlpha !== false)) {
+          opts = Object.assign({}, opts || {}, { premultipliedAlpha: true });
+        }
+        return origGetContext.call(this, type, opts);
+      };
+
       player = new spine.SpinePlayer(container, {
         binaryUrl: '<%- skel %>',
         atlasUrl: '<%- atlas %>',
         animation: defaultAnim || undefined,
         alpha: true,
         backgroundColor: '#00000000',
-        premultipliedAlpha: false,
+        premultipliedAlpha: true,
         showControls: false,
         showLoading: false,
         viewport: { transitionTime: 0 },
         success: function(p) {
+          HTMLCanvasElement.prototype.getContext = origGetContext;
           animations = p.skeleton.data.animations.map(function(a) { return a.name; });
           if (!currentIdleAnim) {
             currentIdleAnim = animations[0] || '';

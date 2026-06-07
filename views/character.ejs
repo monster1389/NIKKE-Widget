@@ -21,6 +21,7 @@
       var touchAnimName = '<%- touchAnim %>';
       var animations = [];
       var currentIdleAnim = defaultAnim;
+      var actionPlaying = false;
       var player;
 
       function sendParent(data) {
@@ -88,6 +89,7 @@
           p.animationState.addListener({
             complete: function(entry) {
               if (!entry.loop) {
+                actionPlaying = false;
                 player.setAnimation(currentIdleAnim, true);
                 sendParent({ type: 'ended', animation: entry.animation.name });
               }
@@ -95,8 +97,10 @@
           });
 
           p.canvas.addEventListener('click', function() {
+            if (actionPlaying) return;
             var hasAnim = animations.indexOf(touchAnimName) >= 0;
             if (!hasAnim) return;
+            actionPlaying = true;
             player.setAnimation(touchAnimName, false);
             sendParent({ type: 'playing', animation: touchAnimName });
           });
@@ -111,6 +115,8 @@
         switch (data.action) {
           case 'play':
             if (!data.animation || animations.indexOf(data.animation) < 0) return;
+            if (data.loop === false && actionPlaying) return;
+            if (data.loop === false) actionPlaying = true;
             player.setAnimation(data.animation, data.loop !== false);
             break;
           case 'setIdle':

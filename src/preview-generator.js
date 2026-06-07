@@ -34,7 +34,7 @@ async function generatePreviews(characters, baseUrl) {
     try {
       await page.setViewport(VIEWPORT);
 
-      await page.goto(`${baseUrl}/${char.name}`, {
+      await page.goto(`${baseUrl}/${char.name}?screenshot=1`, {
         waitUntil: 'domcontentloaded',
         timeout: READY_TIMEOUT,
       });

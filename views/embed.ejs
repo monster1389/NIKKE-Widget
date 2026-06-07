@@ -56,15 +56,11 @@
         skeleton.setToSetupPose();
         skeleton.updateWorldTransform();
 
-        var pad = 0;
-        var size = Math.max(maxX - minX, maxY - minY) * (1 + pad);
-        var cx = (minX + maxX) / 2;
-        var cy = (minY + maxY) / 2;
         var frozenViewport = {
-          x: cx - size / 2,
-          y: cy - size / 2,
-          width: size,
-          height: size
+          x: minX,
+          y: minY,
+          width: maxX - minX,
+          height: maxY - minY
         };
 
         p.calculateAnimationViewport = function(anim, vp) {

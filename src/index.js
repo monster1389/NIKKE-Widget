@@ -68,8 +68,12 @@ app.post('/api/scrape', express.json(), async (req, res) => {
 
   try {
     for await (const ev of scrapeGenerator(url, name, ASSETS_DIR)) {
+      if (ev.step === 'error') {
+        res.write(`data: ${JSON.stringify(ev)}\n\n`);
+        break;
+      }
+      if (ev.step === 'done') break;
       res.write(`data: ${JSON.stringify(ev)}\n\n`);
-      if (ev.step === 'error' || ev.step === 'done') break;
     }
 
     if (!res.writableEnded) {

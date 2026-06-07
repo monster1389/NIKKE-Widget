@@ -78,7 +78,8 @@ app.get('/embed/:character.js', (req, res, next) => {
     return res.status(500).send('Missing model files (need .skel, .atlas)');
   }
 
-  const base = `${req.protocol}://${req.get('host')}`;
+  const proto = req.get('x-forwarded-proto') || req.protocol;
+  const base = `${proto}://${req.get('host')}`;
 
   res.type('application/javascript');
   res.render('embed', {

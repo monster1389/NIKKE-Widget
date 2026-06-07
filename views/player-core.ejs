@@ -1,0 +1,137 @@
+<%
+// Parameters:
+//   viewportMode: 'padded' | 'raw' — padded adds 20% margin and centers; raw uses exact bounds
+//   sendSize: boolean — whether to postMessage the character size to parent
+%>
+var defaultAnim = '<%- defaultAnim %>';
+var loop = <%= loop %>;
+var touchAnimName = '<%- touchAnim %>';
+var animations = [];
+var currentIdleAnim = defaultAnim;
+var actionPlaying = false;
+var player;
+
+function sendParent(data) {
+  window.parent.postMessage(data, '*');
+}
+
+player = new spine.SpinePlayer(container, {
+  binaryUrl: '<%- skel %>',
+  atlasUrl: '<%- atlas %>',
+  animation: defaultAnim || undefined,
+  alpha: true,
+  backgroundColor: '#00000000',
+  premultipliedAlpha: true,
+  showControls: false,
+  showLoading: false,
+  viewport: { transitionTime: 0 },
+  success: function(p) {
+    p.canvas.style.background = 'transparent';
+    animations = p.skeleton.data.animations.map(function(a) { return a.name; });
+    if (!currentIdleAnim) {
+      currentIdleAnim = animations[0] || '';
+    }
+
+    var skeleton = p.skeleton;
+    var idleAnim = skeleton.data.animations.find(function(a) { return a.name === currentIdleAnim; });
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    var steps = Math.max(2, Math.min(10, Math.floor((idleAnim ? idleAnim.duration : 0) * 4)));
+    for (var i = 0; i <= steps; i++) {
+      skeleton.setToSetupPose();
+      if (idleAnim) {
+        idleAnim.apply(skeleton, (i / steps) * idleAnim.duration, (i / steps) * idleAnim.duration, false, null, 1, spine.MixBlend.setup, spine.MixDirection.mix);
+      }
+      skeleton.updateWorldTransform();
+      var b = skeleton.getBoundsRect();
+      if (!b || b.width === 0 || b.height === 0) continue;
+      minX = Math.min(minX, b.x);
+      minY = Math.min(minY, b.y);
+      maxX = Math.max(maxX, b.x + b.width);
+      maxY = Math.max(maxY, b.y + b.height);
+    }
+    skeleton.setToSetupPose();
+    skeleton.updateWorldTransform();
+
+    <% if (viewportMode === 'padded') { %>
+    var pad = 0.2;
+    var size = Math.max(maxX - minX, maxY - minY) * (1 + pad);
+    var cx = (minX + maxX) / 2;
+    var cy = (minY + maxY) / 2;
+    var frozenViewport = {
+      x: cx - size / 2,
+      y: cy - size / 2,
+      width: size,
+      height: size
+    };
+    <% } else { %>
+    var frozenViewport = {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY
+    };
+    <% } %>
+
+    p.calculateAnimationViewport = function(anim, vp) {
+      vp.x = frozenViewport.x;
+      vp.y = frozenViewport.y;
+      vp.width = frozenViewport.width;
+      vp.height = frozenViewport.height;
+    };
+
+    <% if (sendSize) { %>
+    sendParent({ type: 'size', width: frozenViewport.width, height: frozenViewport.height });
+    <% } %>
+
+    // Combine all skins so weapon/accessories show
+    var combinedSkin = new spine.Skin('combined');
+    skeleton.data.skins.forEach(function(s) { combinedSkin.addSkin(s); });
+    skeleton.setSkin(combinedSkin);
+    skeleton.setSlotsToSetupPose();
+
+    p.setAnimation(currentIdleAnim, loop);
+    p.play();
+    sendParent({ type: 'ready', animations: animations });
+
+    p.animationState.addListener({
+      complete: function(entry) {
+        if (!entry.loop) {
+          actionPlaying = false;
+          player.setAnimation(currentIdleAnim, true);
+          sendParent({ type: 'ended', animation: entry.animation.name });
+        }
+      }
+    });
+
+    p.canvas.addEventListener('click', function() {
+      if (actionPlaying) return;
+      var hasAnim = animations.indexOf(touchAnimName) >= 0;
+      if (!hasAnim) return;
+      actionPlaying = true;
+      player.setAnimation(touchAnimName, false);
+      sendParent({ type: 'playing', animation: touchAnimName });
+    });
+  },
+  error: function(p, msg) {
+    console.error('Spine load error:', msg);
+  },
+});
+
+window.addEventListener('message', function(e) {
+  var data = e.data || {};
+  switch (data.action) {
+    case 'play':
+      if (!data.animation || animations.indexOf(data.animation) < 0) return;
+      if (data.loop === false && actionPlaying) return;
+      if (data.loop === false) actionPlaying = true;
+      player.setAnimation(data.animation, data.loop !== false);
+      break;
+    case 'setIdle':
+      if (!data.animation || animations.indexOf(data.animation) < 0) return;
+      currentIdleAnim = data.animation;
+      break;
+    case 'getAnimations':
+      sendParent({ type: 'animations', animations: animations });
+      break;
+  }
+});

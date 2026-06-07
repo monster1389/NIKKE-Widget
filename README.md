@@ -15,7 +15,7 @@ CORS 已启用（`Access-Control-Allow-Origin: *`）。
 ### 直接嵌入（推荐，无白底）
 
 ```html
-<div id="live2d-widget"></div>
+<div id="live2d-widget" style="width:240px;height:350px"></div>
 <script src="http://rpi:8090/public/spine-player/spine-player.js"></script>
 <script src="http://rpi:8090/embed/anis.js?animation=idle&loop=true&touch=action"></script>
 ```
@@ -58,7 +58,6 @@ embed 脚本自动在 `#live2d-widget` 内初始化角色，并发送 `size` 事
 ## 启动
 
 ```bash
-pm2 start ecosystem.config.cjs
-pm2 startup
-pm2 save
+node src/index.js        # 直接启动
+pm2 start ecosystem.config.cjs  # PM2 守护
 ```

@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>Live2D Characters</title>
+  <title>NIKKE 看板娘</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -15,7 +15,64 @@
       padding: 48px 24px;
       min-height: 100vh;
     }
-    h1 { font-size: 24px; margin-bottom: 32px; color: #e0e0e0; }
+    h1 { font-size: 24px; margin-bottom: 8px; color: #e0e0e0; }
+    .subtitle { font-size: 14px; color: #888; margin-bottom: 24px; }
+
+    .scraper-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 24px;
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      max-width: 700px;
+      width: 100%;
+    }
+    .scraper-form input {
+      padding: 8px 12px;
+      border: 1px solid #0f3460;
+      border-radius: 4px;
+      background: #1a1a2e;
+      color: #eee;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .scraper-form input:focus { border-color: #e94560; }
+    .scraper-form input.url-input { width: 320px; }
+    .scraper-form input.name-input { width: 140px; }
+    .scraper-form button {
+      padding: 8px 20px;
+      background: #e94560;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .scraper-form button:hover { background: #d63850; }
+    .scraper-form button:disabled { background: #555; cursor: not-allowed; }
+
+    .scrape-status {
+      width: 100%;
+      text-align: center;
+      font-size: 13px;
+      color: #888;
+      min-height: 20px;
+      margin-bottom: 24px;
+      transition: color 0.2s;
+    }
+    .scrape-status.active { color: #4fc3f7; }
+    .scrape-status.error { color: #e94560; }
+    .scrape-status.done { color: #66bb6a; }
+
     .grid {
       display: flex;
       flex-wrap: wrap;
@@ -59,7 +116,16 @@
   </style>
 </head>
 <body>
-  <h1>Live2D 角色列表</h1>
+  <h1>NIKKE 看板娘</h1>
+  <p class="subtitle">从 GameKee 下载角色，嵌入你的页面</p>
+
+  <div class="scraper-form" id="scraper-form">
+    <input class="url-input" type="text" id="scrape-url" placeholder="GameKee URL, 如 https://www.gamekee.com/nikke/tj/703135.html">
+    <input class="name-input" type="text" id="scrape-name" placeholder="角色名, 如 anis">
+    <button id="scrape-btn" onclick="startScrape()">下载</button>
+  </div>
+  <div class="scrape-status" id="scrape-status"></div>
+
   <div class="grid">
     <% characters.forEach(function(c) { %>
       <a class="card" href="/<%= c.name %>">
@@ -72,5 +138,81 @@
       </a>
     <% }); %>
   </div>
+
+  <script>
+    var statusEl = document.getElementById('scrape-status');
+    var btn = document.getElementById('scrape-btn');
+    var urlInput = document.getElementById('scrape-url');
+    var nameInput = document.getElementById('scrape-name');
+
+    function setStatus(msg, cls) {
+      statusEl.textContent = msg;
+      statusEl.className = 'scrape-status ' + (cls || '');
+    }
+
+    function startScrape() {
+      var url = urlInput.value.trim();
+      var name = nameInput.value.trim();
+
+      if (!url || !name) {
+        setStatus('请填写 URL 和角色名', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      setStatus('正在连接...', 'active');
+
+      fetch('/api/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url, name: name }),
+      }).then(function(response) {
+        if (!response.ok) {
+          return response.json().then(function(data) {
+            throw new Error(data.error || '请求失败');
+          });
+        }
+
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = '';
+
+        function read() {
+          reader.read().then(function(result) {
+            if (result.done) return;
+
+            buffer += decoder.decode(result.value, { stream: true });
+            var lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (var i = 0; i < lines.length; i++) {
+              var line = lines[i];
+              if (line.startsWith('data: ')) {
+                try {
+                  var ev = JSON.parse(line.slice(6));
+                  if (ev.step === 'error') {
+                    setStatus('错误: ' + ev.message, 'error');
+                    btn.disabled = false;
+                    return;
+                  } else if (ev.step === 'done') {
+                    setStatus(ev.message, 'done');
+                    setTimeout(function() { location.reload(); }, 1000);
+                    return;
+                  } else {
+                    setStatus(ev.message, 'active');
+                  }
+                } catch(e) {}
+              }
+            }
+            read();
+          });
+        }
+        read();
+      }).catch(function(err) {
+        setStatus('错误: ' + err.message, 'error');
+        btn.disabled = false;
+      });
+    }
+  </script>
 </body>
 </html>

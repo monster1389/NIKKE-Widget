@@ -2,38 +2,67 @@
 
 Express 服务，默认端口 8090（`config.js` 可改），提供 Spine 角色动画展示页面供 iframe 嵌入或直接 DOM 嵌入。
 
-> **规则**: 不提交 `docs/superpowers/` 目录下的设计文档和计划文档（已在 .gitignore）。设计讨论直接写到本文件。
+> **规则**: 不提交 `docs/superpowers/` 目录下的设计文档和计划文档（已在 .gitignore）。
 
 ## 目录结构
 
-- `config.js` — 端口等配置
-- `src/index.js` — Express 入口
-- `src/get-characters.js` — 角色目录扫描
-- `src/preview-generator.js` — Puppeteer 自动生成角色预览图
-- `src/puppeteer-launcher.js` — 共享的浏览器启动配置
-- `views/` — EJS 模板（`player-core.ejs` 为共享 SpinePlayer 逻辑）
-- `scripts/scrape-spine.js` — GameKee 爬虫 CLI
-- `assets/` — 角色模型（每个角色一个文件夹，含 .skel .atlas .png）
-- `public/spine-player/` — symlink → node_modules/@esotericsoftware/spine-player/dist/iife（已 gitignore）
+```
+src/
+├── server.js                  # Express 启动，只管 listen
+├── app.js                     # Express 实例创建 + 中间件挂载
+├── routes/
+│   ├── pages.js               # GET / 首页, GET /:character 角色页
+│   ├── embed.js               # GET /embed/:character.js
+│   └── api.js                 # POST /api/scrape, DELETE/PUT /api/characters
+├── services/
+│   ├── character-service.js   # 扫描、缓存、删除、重命名
+│   ├── scraper-service.js     # GameKee 爬虫
+│   └── preview-service.js     # 预览图生成
+├── middleware/
+│   ├── cors.js
+│   ├── domain-guard.js
+│   └── error-handler.js
+└── lib/
+    ├── download-file.js       # 纯 HTTP 下载函数
+    └── puppeteer-launcher.js  # Chromium 自动发现 + 启动
+
+public/js/
+└── player-core.js             # SpinePlayer 核心逻辑（纯 JS，通过 data-* 属性配置）
+
+views/
+├── home.ejs                   # 首页 + 角色管理按钮
+├── character.ejs              # 角色展示页 + 皮肤/动画控件
+└── embed.ejs                  # 嵌入脚本（内联 player-core.js）
+
+scripts/scrape-spine.js        # GameKee 爬虫 CLI
+assets/                        # 角色模型（每个角色一个文件夹）
+```
 
 ## 命令
 
-- 启动: `node src/index.js`
+- 启动: `node src/server.js`
 - PM2 启动: `pm2 start ecosystem.config.cjs`
-- 端口改 `config.js`
+- 测试: `npx vitest run`
 
 ## 路由
 
-- `GET /` — 角色列表首页
-- `GET /:character` — 角色展示页（透明背景，iframe 嵌入，左上角返回按钮）
-- `GET /embed/:character.js` — 生成自执行 JS 脚本，供父页面直接嵌入（无 iframe，解决白底问题）
-- `POST /api/scrape` — SSE 端点，接收 `{ url, name }` 抓取 GameKee 角色
+- `GET /` — 角色列表首页（可删除、重命名角色）
+- `GET /:character` — 角色展示页（透明背景，皮肤切换 + 动画栏）
+- `GET /embed/:character.js` — 生成自执行 JS 脚本，供父页面直接嵌入
+- `POST /api/scrape` — SSE 端点，抓取 GameKee 角色
+- `DELETE /api/characters/:name` — 删除角色
+- `PUT /api/characters/:name` — 重命名角色 `{ newName: "xxx" }`
+
+## 角色展示页控件
+
+- **皮肤切换**: 页面左右边缘箭头按钮（`<` `>`）循环切换皮肤；也可按住页面任意位置左右拖动切换
+- **动画栏**: 角色下方横向滚动列表（鼠标滚轮/拖动滚动），列出除 idle/action 外的所有动画。点击播放一遍回 idle。点击角色 canvas → 播放 action
 
 ## Web 抓取功能
 
 首页顶部表单填入 GameKee URL 和角色名，点击下载按钮。
 
-**流程**: 后端 `src/scraper.js` 调用 Puppeteer 抓取 Spine 文件 → SSE 实时推送进度 → 完成后自动调用 `generatePreviews` 生成预览 → 1s 后页面自动刷新。
+**流程**: 后端 `src/services/scraper-service.js` 调用 Puppeteer 抓取 Spine 文件 → SSE 实时推送进度 → 完成后自动生成预览 → 1s 后页面自动刷新。
 
 **SSE 事件格式**: `data: {"step":"...","message":"..."}`
 
@@ -65,6 +94,22 @@ Express 服务，默认端口 8090（`config.js` 可改），提供 Spine 角色
 | animation | idle | 初始待机动画 |
 | loop | true | 待机动画是否循环 |
 | touch | action | 点击播放的动画 |
+
+## player-core.js 配置
+
+通过容器 `data-*` 属性传配置，不再用 EJS 编译 JS：
+
+```html
+<div id="container"
+     data-skels="/assets/xxx/xxx.skel"
+     data-atlas="/assets/xxx/xxx.atlas"
+     data-animation="idle"
+     data-loop="true"
+     data-touch="action"
+     data-viewport="padded"
+     data-send-size="false">
+</div>
+```
 
 ## postMessage API
 

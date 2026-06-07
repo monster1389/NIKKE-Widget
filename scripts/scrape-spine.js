@@ -1,5 +1,5 @@
 const path = require('path');
-const { scrapeGenerator } = require('../src/scraper');
+const { scrapeGenerator } = require('../src/services/scraper-service');
 
 const URL = process.argv[2];
 const BASE_NAME = process.argv[3];

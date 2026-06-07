@@ -3,3 +3,4 @@ docs/superpowers/
 .superpowers/
 public/spine-player/
 assets/
+.claude/settings.local.json

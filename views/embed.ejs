@@ -29,16 +29,6 @@
       showControls: false,
       showLoading: false,
       viewport: { transitionTime: 0 },
-      update: function(p, delta) {
-        var canvas = p.canvas;
-        var renderer = p.sceneRenderer;
-        var camera = renderer.camera;
-        var zoom = camera.zoom;
-        var vp = p.viewport;
-        // 贴右下角
-        camera.position.x = vp.x + vp.width - canvas.width / (2 * zoom);
-        camera.position.y = vp.y + canvas.height / (2 * zoom);
-      },
       success: function(p) {
         p.canvas.style.background = 'transparent';
         animations = p.skeleton.data.animations.map(function(a) { return a.name; });

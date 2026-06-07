@@ -3,9 +3,11 @@ const path = require('path');
 const config = require('../config');
 const { getCharacters, readCharacterFiles } = require('./get-characters');
 const { generatePreviews } = require('./preview-generator');
+const { scrapeGenerator } = require('./scraper');
 
 const app = express();
 const ASSETS_DIR = path.join(__dirname, '..', 'assets');
+let scraping = false;
 const DEFAULT_ANIMATION = 'idle';
 const DEFAULT_TOUCH_ANIM = 'action';
 
@@ -43,6 +45,58 @@ app.set('views', path.join(__dirname, '..', 'views'));
 
 app.use('/assets', express.static(ASSETS_DIR));
 app.use('/public', express.static(path.join(__dirname, '..', 'public')));
+
+app.post('/api/scrape', express.json(), async (req, res) => {
+  const { url, name } = req.body;
+
+  if (!url || !name) {
+    return res.status(400).json({ error: 'url and name are required' });
+  }
+  if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+    return res.status(400).json({ error: 'name must be alphanumeric' });
+  }
+  if (scraping) {
+    return res.status(409).json({ error: 'A scrape is already in progress' });
+  }
+
+  scraping = true;
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+
+  try {
+    for await (const ev of scrapeGenerator(url, name, ASSETS_DIR)) {
+      res.write(`data: ${JSON.stringify(ev)}\n\n`);
+      if (ev.step === 'error' || ev.step === 'done') break;
+    }
+
+    if (!res.writableEnded) {
+      // Invalidate character cache so list includes new character
+      characterCache = null;
+
+      const characters = listCharacters();
+      const newChars = characters.filter(c => c.name.startsWith(name));
+
+      // Generate previews for new characters
+      if (newChars.length > 0) {
+        res.write(`data: ${JSON.stringify({ step: 'preview', message: '正在生成预览图...' })}\n\n`);
+        await generatePreviews(newChars, `http://localhost:${config.port}`);
+        res.write(`data: ${JSON.stringify({ step: 'done', message: '完成，页面即将刷新' })}\n\n`);
+      } else {
+        res.write(`data: ${JSON.stringify({ step: 'done', message: '完成，页面即将刷新' })}\n\n`);
+      }
+    }
+  } catch (err) {
+    if (!res.writableEnded) {
+      res.write(`data: ${JSON.stringify({ step: 'error', message: err.message })}\n\n`);
+    }
+  } finally {
+    scraping = false;
+    if (!res.writableEnded) res.end();
+  }
+});
 
 app.get('/', (req, res) => {
   res.render('home', { characters: listCharacters() });

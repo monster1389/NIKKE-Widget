@@ -47,6 +47,36 @@
           p.play();
           sendParent({ type: 'ready', animations: animations });
 
+          var frozenViewport = null;
+
+          function freezeViewport() {
+            if (!frozenViewport && p.currentViewport && p.currentViewport.width) {
+              frozenViewport = {
+                x: p.currentViewport.x,
+                y: p.currentViewport.y,
+                width: p.currentViewport.width,
+                height: p.currentViewport.height,
+              };
+            }
+            if (frozenViewport && p.currentViewport) {
+              p.currentViewport.x = frozenViewport.x;
+              p.currentViewport.y = frozenViewport.y;
+              p.currentViewport.width = frozenViewport.width;
+              p.currentViewport.height = frozenViewport.height;
+              p.previousViewport.x = frozenViewport.x;
+              p.previousViewport.y = frozenViewport.y;
+              p.previousViewport.width = frozenViewport.width;
+              p.previousViewport.height = frozenViewport.height;
+            }
+          }
+
+          var origSetAnimation = p.setAnimation.bind(p);
+          p.setAnimation = function(name, loop) {
+            var result = origSetAnimation(name, loop);
+            freezeViewport();
+            return result;
+          };
+
           p.animationState.addListener({
             complete: function(entry) {
               if (!entry.loop) {

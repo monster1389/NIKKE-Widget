@@ -68,19 +68,7 @@
             });
             skeleton.setToSetupPose();
             skeleton.updateWorldTransform();
-
-            var boundsWidth = maxX - minX;
-            var boundsHeight = maxY - minY;
-            var cx = (minX + maxX) / 2;
-            var cy = (minY + maxY) / 2;
-            var size = Math.max(boundsWidth, boundsHeight) * 1.2;
-
-            return {
-              x: cx - size / 2,
-              y: cy - size / 2,
-              width: size,
-              height: size
-            };
+            return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
           }
 
           frozenViewport = computeUnionBounds();

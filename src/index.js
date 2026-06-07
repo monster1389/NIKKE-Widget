@@ -40,6 +40,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// 公网域名禁止访问首页和 scraper API，仅允许 embed/资源路径
+app.use((req, res, next) => {
+  if (req.hostname === 'live2d.rpi1204.xyz' && ['/', '/api/scrape'].includes(req.path)) {
+    return res.status(403).send('Forbidden');
+  }
+  next();
+});
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '..', 'views'));
 

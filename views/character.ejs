@@ -40,46 +40,46 @@
         viewport: { transitionTime: 0 },
         success: function(p) {
           animations = p.skeleton.data.animations.map(function(a) { return a.name; });
-          console.log('Available animations:', animations);
           if (!currentIdleAnim) {
             currentIdleAnim = animations[0] || '';
           }
 
-          var frozenViewport = null;
-
-          function computeUnionBounds() {
-            var skeleton = p.skeleton;
-            var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            animations.forEach(function(name) {
-              var anim = skeleton.data.animations.find(function(a) { return a.name === name; });
-              if (!anim) return;
-              var steps = Math.max(2, Math.min(10, Math.floor(anim.duration * 4)));
-              for (var i = 0; i <= steps; i++) {
-                skeleton.setToSetupPose();
-                anim.apply(skeleton, (i / steps) * anim.duration, (i / steps) * anim.duration, false, null, 1, spine.MixBlend.setup, spine.MixDirection.mix);
-                skeleton.updateWorldTransform();
-                var b = skeleton.getBoundsRect();
-                if (!b || b.width === 0 || b.height === 0) return;
-                minX = Math.min(minX, b.x);
-                minY = Math.min(minY, b.y);
-                maxX = Math.max(maxX, b.x + b.width);
-                maxY = Math.max(maxY, b.y + b.height);
-              }
-            });
+          var skeleton = p.skeleton;
+          var idleAnim = skeleton.data.animations.find(function(a) { return a.name === currentIdleAnim; });
+          var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          var steps = Math.max(2, Math.min(10, Math.floor((idleAnim ? idleAnim.duration : 0) * 4)));
+          for (var i = 0; i <= steps; i++) {
             skeleton.setToSetupPose();
+            if (idleAnim) {
+              idleAnim.apply(skeleton, (i / steps) * idleAnim.duration, (i / steps) * idleAnim.duration, false, null, 1, spine.MixBlend.setup, spine.MixDirection.mix);
+            }
             skeleton.updateWorldTransform();
-            return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+            var b = skeleton.getBoundsRect();
+            if (!b || b.width === 0 || b.height === 0) continue;
+            minX = Math.min(minX, b.x);
+            minY = Math.min(minY, b.y);
+            maxX = Math.max(maxX, b.x + b.width);
+            maxY = Math.max(maxY, b.y + b.height);
           }
+          skeleton.setToSetupPose();
+          skeleton.updateWorldTransform();
 
-          frozenViewport = computeUnionBounds();
+          var pad = 0.2;
+          var size = Math.max(maxX - minX, maxY - minY) * (1 + pad);
+          var cx = (minX + maxX) / 2;
+          var cy = (minY + maxY) / 2;
+          var frozenViewport = {
+            x: cx - size / 2,
+            y: cy - size / 2,
+            width: size,
+            height: size
+          };
 
           p.calculateAnimationViewport = function(anim, vp) {
-            if (frozenViewport) {
-              vp.x = frozenViewport.x;
-              vp.y = frozenViewport.y;
-              vp.width = frozenViewport.width;
-              vp.height = frozenViewport.height;
-            }
+            vp.x = frozenViewport.x;
+            vp.y = frozenViewport.y;
+            vp.width = frozenViewport.width;
+            vp.height = frozenViewport.height;
           };
 
           p.setAnimation(currentIdleAnim, loop);

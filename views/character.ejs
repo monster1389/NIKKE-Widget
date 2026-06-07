@@ -47,34 +47,20 @@
           p.play();
           sendParent({ type: 'ready', animations: animations });
 
+          var origCalcViewport = p.calculateAnimationViewport.bind(p);
           var frozenViewport = null;
-
-          function freezeViewport() {
-            if (!frozenViewport && p.currentViewport && p.currentViewport.width) {
+          p.calculateAnimationViewport = function(anim, vp) {
+            if (frozenViewport) {
+              vp.x = frozenViewport.x;
+              vp.y = frozenViewport.y;
+              vp.width = frozenViewport.width;
+              vp.height = frozenViewport.height;
+            } else {
+              origCalcViewport(anim, vp);
               frozenViewport = {
-                x: p.currentViewport.x,
-                y: p.currentViewport.y,
-                width: p.currentViewport.width,
-                height: p.currentViewport.height,
+                x: vp.x, y: vp.y, width: vp.width, height: vp.height,
               };
             }
-            if (frozenViewport && p.currentViewport) {
-              p.currentViewport.x = frozenViewport.x;
-              p.currentViewport.y = frozenViewport.y;
-              p.currentViewport.width = frozenViewport.width;
-              p.currentViewport.height = frozenViewport.height;
-              p.previousViewport.x = frozenViewport.x;
-              p.previousViewport.y = frozenViewport.y;
-              p.previousViewport.width = frozenViewport.width;
-              p.previousViewport.height = frozenViewport.height;
-            }
-          }
-
-          var origSetAnimation = p.setAnimation.bind(p);
-          p.setAnimation = function(name, loop) {
-            var result = origSetAnimation(name, loop);
-            freezeViewport();
-            return result;
           };
 
           p.animationState.addListener({

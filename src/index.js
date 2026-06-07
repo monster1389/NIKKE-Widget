@@ -83,6 +83,7 @@ app.post('/api/scrape', express.json(), async (req, res) => {
       if (newChars.length > 0) {
         res.write(`data: ${JSON.stringify({ step: 'preview', message: '正在生成预览图...' })}\n\n`);
         await generatePreviews(newChars, `http://localhost:${config.port}`);
+        characterCache = null; // Invalidate again so previews show up
         res.write(`data: ${JSON.stringify({ step: 'done', message: '完成，页面即将刷新' })}\n\n`);
       } else {
         res.write(`data: ${JSON.stringify({ step: 'done', message: '完成，页面即将刷新' })}\n\n`);

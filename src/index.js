@@ -48,6 +48,44 @@ app.get('/', (req, res) => {
   res.render('home', { characters });
 });
 
+app.get('/embed/:character.js', (req, res, next) => {
+  const charDir = path.join(__dirname, '..', 'assets', req.params.character);
+
+  try {
+    if (!fs.existsSync(charDir) || !fs.statSync(charDir).isDirectory()) {
+      return res.status(404).send('Character not found');
+    }
+  } catch {
+    return next(new Error(`Failed to access character directory: ${req.params.character}`));
+  }
+
+  let files;
+  try {
+    files = fs.readdirSync(charDir);
+  } catch {
+    return next(new Error(`Failed to read character directory: ${req.params.character}`));
+  }
+
+  const skel = files.find(f => f.endsWith('.skel'));
+  const atlas = files.find(f => f.endsWith('.atlas'));
+
+  if (!skel || !atlas) {
+    return res.status(500).send('Missing model files (need .skel, .atlas)');
+  }
+
+  const base = `${req.protocol}://${req.get('host')}`;
+
+  res.type('application/javascript');
+  res.render('embed', {
+    name: req.params.character,
+    skel: `${base}/assets/${req.params.character}/${skel}`,
+    atlas: `${base}/assets/${req.params.character}/${atlas}`,
+    defaultAnim: req.query.animation || 'idle',
+    loop: req.query.loop !== 'false',
+    touchAnim: req.query.touch || 'action',
+  });
+});
+
 app.get('/:character', (req, res, next) => {
   const charDir = path.join(__dirname, '..', 'assets', req.params.character);
 

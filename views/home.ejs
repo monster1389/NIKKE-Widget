@@ -113,6 +113,31 @@
       font-size: 14px;
       color: #666;
     }
+
+    .card-wrap {
+      position: relative;
+    }
+    .card-actions {
+      display: flex;
+      gap: 6px;
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+    }
+    .action-btn {
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      background: rgba(0,0,0,0.5);
+      color: #ccc;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .action-btn:hover { background: rgba(0,0,0,0.7); color: #fff; }
+    .delete-btn:hover { background: rgba(233,69,96,0.6); }
   </style>
 </head>
 <body>
@@ -128,14 +153,20 @@
 
   <div class="grid">
     <% characters.forEach(function(c) { %>
-      <a class="card" href="/<%= c.name %>">
-        <% if (c.preview) { %>
-          <img src="<%= c.preview %>" alt="<%= c.name %>">
-        <% } else { %>
-          <div class="no-preview">no preview</div>
-        <% } %>
-        <span><%= c.name %></span>
-      </a>
+      <div class="card-wrap">
+        <a class="card" href="/<%= c.name %>">
+          <% if (c.preview) { %>
+            <img src="<%= c.preview %>" alt="<%= c.name %>">
+          <% } else { %>
+            <div class="no-preview">no preview</div>
+          <% } %>
+          <span><%= c.name %></span>
+        </a>
+        <div class="card-actions">
+          <button class="action-btn delete-btn" onclick="deleteCharacter('<%= c.name %>')" title="删除">🗑</button>
+          <button class="action-btn rename-btn" onclick="renameCharacter('<%= c.name %>')" title="重命名">✏</button>
+        </div>
+      </div>
     <% }); %>
   </div>
 
@@ -212,6 +243,39 @@
         setStatus('错误: ' + err.message, 'error');
         btn.disabled = false;
       });
+    }
+  </script>
+
+  <script>
+    function deleteCharacter(name) {
+      if (!confirm('确定要删除 ' + name + ' 吗？此操作不可恢复。')) return;
+      fetch('/api/characters/' + encodeURIComponent(name), { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.success) location.reload();
+          else alert('删除失败: ' + (data.error || 'unknown'));
+        })
+        .catch(function(err) { alert('删除失败: ' + err.message); });
+    }
+
+    function renameCharacter(name) {
+      var newName = prompt('新名字（字母、数字、下划线、横线）:', name);
+      if (!newName || newName === name) return;
+      if (!/^[a-zA-Z0-9_-]+$/.test(newName)) {
+        alert('名字只能包含字母、数字、下划线和横线');
+        return;
+      }
+      fetch('/api/characters/' + encodeURIComponent(name), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newName: newName }),
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.success) location.reload();
+          else alert('重命名失败: ' + (data.error || 'unknown'));
+        })
+        .catch(function(err) { alert('重命名失败: ' + err.message); });
     }
   </script>
 </body>

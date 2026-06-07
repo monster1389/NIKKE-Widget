@@ -25,18 +25,166 @@
       transition: background 0.2s, color 0.2s;
     }
     .back-btn:hover { background: rgba(0,0,0,0.7); color: #fff; }
+
+    /* Skin arrows */
+    .skin-arrow {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      width: 40px;
+      height: 60px;
+      background: rgba(0,0,0,0.3);
+      color: rgba(255,255,255,0.6);
+      border: none;
+      border-radius: 4px;
+      font-size: 24px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .skin-arrow:hover { background: rgba(0,0,0,0.6); color: #fff; }
+    .skin-arrow-left { left: 8px; }
+    .skin-arrow-right { right: 8px; }
+    .skin-indicator {
+      position: fixed;
+      bottom: 80px;
+      right: 16px;
+      z-index: 10;
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* Animation bar */
+    .anim-bar-wrap {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      background: rgba(0,0,0,0.4);
+      padding: 8px 0;
+    }
+    .anim-bar {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 0 16px;
+      scrollbar-width: none;
+      cursor: grab;
+      user-select: none;
+    }
+    .anim-bar::-webkit-scrollbar { display: none; }
+    .anim-bar:active { cursor: grabbing; }
+    .anim-chip {
+      flex-shrink: 0;
+      padding: 4px 14px;
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.8);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 14px;
+      font-size: 13px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .anim-chip:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.4); }
   </style>
 </head>
 <body>
-  <div id="container"></div>
+  <div id="container"
+       data-skels="<%= skel %>"
+       data-atlas="<%= atlas %>"
+       data-animation="<%= defaultAnim %>"
+       data-loop="<%= loop %>"
+       data-touch="<%= touchAnim %>"
+       data-viewport="padded">
+  </div>
+
   <% if (!hideBack) { %>
   <a class="back-btn" href="/">← 返回</a>
   <% } %>
 
+  <button class="skin-arrow skin-arrow-left" onclick="prevSkin()" title="上一个皮肤">&lt;</button>
+  <button class="skin-arrow skin-arrow-right" onclick="nextSkin()" title="下一个皮肤">&gt;</button>
+  <div class="skin-indicator" id="skin-indicator"></div>
+
+  <div class="anim-bar-wrap">
+    <div class="anim-bar" id="anim-bar"></div>
+  </div>
+
   <script src="/public/spine-player/spine-player.js"></script>
+  <script src="/public/js/player-core.js"></script>
   <script>
-    var container = document.getElementById('container');
-    <%- include('player-core', { viewportMode: 'padded', sendSize: false }) %>
+    function nextSkin() { window.Live2DPlayer.nextSkin(); }
+    function prevSkin() { window.Live2DPlayer.prevSkin(); }
+
+    window.Live2DPlayer.on('onSkinChange', function(index, name, total) {
+      document.getElementById('skin-indicator').textContent = (index + 1) + ' / ' + total;
+    });
+
+    window.Live2DPlayer.on('onReady', function(p, animations, skinNames) {
+      var count = skinNames.length;
+      document.getElementById('skin-indicator').textContent = '1 / ' + count;
+
+      // Build animation bar (exclude idle and action)
+      var bar = document.getElementById('anim-bar');
+      animations.forEach(function(name) {
+        if (name === 'idle' || name === 'action') return;
+        var chip = document.createElement('span');
+        chip.className = 'anim-chip';
+        chip.textContent = name;
+        chip.addEventListener('click', function() {
+          window.Live2DPlayer.playAnimation(name, false);
+        });
+        bar.appendChild(chip);
+      });
+    });
+
+    // Drag to switch skin (anywhere on page)
+    (function() {
+      var dragStart = 0;
+      var threshold = 60;
+      var tracking = false;
+
+      document.addEventListener('mousedown', function(e) {
+        dragStart = e.clientX;
+        tracking = true;
+      });
+      document.addEventListener('mouseup', function(e) {
+        if (!tracking) return;
+        tracking = false;
+        var dx = e.clientX - dragStart;
+        if (Math.abs(dx) >= threshold) {
+          if (dx > 0) prevSkin();
+          else nextSkin();
+        }
+      });
+    })();
+
+    // Animation bar: mouse wheel horizontal scroll + drag scroll
+    (function() {
+      var bar = document.getElementById('anim-bar');
+      bar.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        bar.scrollLeft += e.deltaY;
+      });
+
+      var isDown = false, startX, scrollLeft;
+      bar.addEventListener('mousedown', function(e) {
+        isDown = true;
+        startX = e.pageX - bar.offsetLeft;
+        scrollLeft = bar.scrollLeft;
+      });
+      bar.addEventListener('mouseleave', function() { isDown = false; });
+      bar.addEventListener('mouseup', function() { isDown = false; });
+      bar.addEventListener('mousemove', function(e) {
+        if (!isDown) return;
+        e.preventDefault();
+        var x = e.pageX - bar.offsetLeft;
+        bar.scrollLeft = scrollLeft - (x - startX);
+      });
+    })();
   </script>
 </body>
 </html>

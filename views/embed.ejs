@@ -1,10 +1,8 @@
 (function() {
-  // ── 1. 推导 BASE 地址 ──────────────────────────────────
   var scriptEl = document.currentScript;
   var BASE = scriptEl.src.replace(/\/embed\/.*$/, '');
   var CONTAINER_ID = 'live2d-widget';
 
-  // ── 2. 注入 CSS ────────────────────────────────────────
   var style = document.createElement('style');
   style.textContent = [
     '#' + CONTAINER_ID + ' { z-index: 9999; pointer-events: none; }',
@@ -21,7 +19,6 @@
   ].join('\n');
   document.head.appendChild(style);
 
-  // ── 3. 创建按钮 ────────────────────────────────────────
   var showControls = <%- controls %>;
   var closeBtn, restoreBtn;
   if (showControls) {
@@ -51,7 +48,6 @@
     document.body.appendChild(restoreBtn);
   }
 
-  // ── 4. 自动调整容器尺寸 ────────────────────────────────
   var targetHeight = <%- targetHeight %>;
   if (!targetHeight) {
     targetHeight = window.innerWidth < 768 ? 250 : 400;
@@ -65,8 +61,6 @@
     container.style.height = Math.round(height * scale) + 'px';
   }
 
-  // 监听 postMessage size 事件（player 通过 window.parent.postMessage 发送，
-  // 在无 iframe 场景下 window.parent === window）
   window.addEventListener('message', function(e) {
     var d = e.data || {};
     if (d.type === 'size' && d.width && d.height) {
@@ -74,7 +68,6 @@
     }
   });
 
-  // ── 5. 加载依赖并初始化角色 ────────────────────────────
   function initPlayer() {
     var container = document.getElementById(CONTAINER_ID);
     if (!container) {
@@ -82,7 +75,15 @@
       return;
     }
 
-    <%- include('player-core', { viewportMode: 'raw', sendSize: true }) %>
+    container.dataset.skels = '<%- skel %>';
+    container.dataset.atlas = '<%- atlas %>';
+    container.dataset.animation = '<%- defaultAnim %>';
+    container.dataset.loop = '<%- loop %>';
+    container.dataset.touch = '<%- touchAnim %>';
+    container.dataset.viewport = 'raw';
+    container.dataset.sendSize = 'true';
+
+    <%- playerCoreJs %>
   }
 
   if (window.spine) {

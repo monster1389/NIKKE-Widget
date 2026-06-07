@@ -1,6 +1,10 @@
 const { Router } = require('express');
+const fs = require('fs');
+const path = require('path');
 const { readCharacterFiles } = require('../services/character-service');
 const config = require('../../config');
+
+const playerCoreJs = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'player-core.js'), 'utf8');
 
 const router = Router();
 
@@ -40,6 +44,7 @@ router.get('/:character.js', (req, res, next) => {
     touchAnim: req.query.touch || DEFAULT_TOUCH_ANIM,
     controls: parseBoolQuery(req.query.controls),
     targetHeight: parseInt(req.query.targetHeight) || 0,
+    playerCoreJs: playerCoreJs,
   });
 });
 

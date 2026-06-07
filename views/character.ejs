@@ -42,6 +42,7 @@
             currentIdleAnim = animations[0] || '';
           }
           p.setAnimation(currentIdleAnim, loop);
+          p.play();
           sendParent({ type: 'ready', animations: animations });
 
           p.animationState.addListener({

@@ -52,9 +52,9 @@ app.get('/:character', (req, res) => {
     skel: `/assets/${req.params.character}/${skel}`,
     atlas: `/assets/${req.params.character}/${atlas}`,
     png: `/assets/${req.params.character}/${png}`,
-    defaultAnim: req.query.animation || '',
+    defaultAnim: req.query.animation || 'idle',
     loop: req.query.loop !== 'false',
-    touchAnim: req.query.touch || 'touch',
+    touchAnim: req.query.touch || 'action',
   });
 });
 

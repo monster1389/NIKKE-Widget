@@ -70,11 +70,8 @@
           vp.height = frozenViewport.height;
         };
 
-        // 容器自适应角色宽高比，消除留白
-        var maxW = 300, maxH = 500;
-        var scale = Math.min(maxW / frozenViewport.width, maxH / frozenViewport.height);
-        container.style.width = Math.round(frozenViewport.width * scale) + 'px';
-        container.style.height = Math.round(frozenViewport.height * scale) + 'px';
+        // 通知父页面角色尺寸
+        sendParent({ type: 'size', width: frozenViewport.width, height: frozenViewport.height });
 
         p.setAnimation(currentIdleAnim, loop);
         p.play();

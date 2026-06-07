@@ -40,6 +40,10 @@
       border-radius: 4px;
       font-size: 24px;
       cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: background 0.2s, color 0.2s;
     }
     .skin-arrow:hover { background: rgba(0,0,0,0.6); color: #fff; }
@@ -47,7 +51,7 @@
     .skin-arrow-right { right: 8px; }
     .skin-indicator {
       position: fixed;
-      bottom: 80px;
+      bottom: 96px;
       right: 16px;
       z-index: 10;
       font-size: 12px;
@@ -55,21 +59,57 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
+    /* Skin bar */
+    .skin-bar-wrap {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(0,0,0,0.4);
+      border-radius: 20px;
+      padding: 4px 10px;
+      max-width: 60vw;
+    }
+    .skin-bar {
+      display: flex;
+      gap: 5px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      user-select: none;
+    }
+    .skin-bar::-webkit-scrollbar { display: none; }
+    .skin-chip {
+      flex-shrink: 0;
+      padding: 3px 12px;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.65);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      font-size: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .skin-chip:hover { background: rgba(255,255,255,0.18); color: rgba(255,255,255,0.9); }
+    .skin-chip.active { background: rgba(255,255,255,0.22); color: #fff; border-color: rgba(255,255,255,0.4); }
+
     /* Animation bar */
     .anim-bar-wrap {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
       z-index: 10;
       background: rgba(0,0,0,0.4);
-      padding: 8px 0;
+      border-radius: 20px;
+      padding: 6px 12px;
+      max-width: 70vw;
     }
     .anim-bar {
       display: flex;
       gap: 6px;
       overflow-x: auto;
-      padding: 0 16px;
       scrollbar-width: none;
       cursor: grab;
       user-select: none;
@@ -105,9 +145,13 @@
   <a class="back-btn" href="/">← 返回</a>
   <% } %>
 
-  <button class="skin-arrow skin-arrow-left" onclick="prevSkin()" title="上一个皮肤">&lt;</button>
-  <button class="skin-arrow skin-arrow-right" onclick="nextSkin()" title="下一个皮肤">&gt;</button>
+  <a class="skin-arrow skin-arrow-left" href="/<%= prevChar %>" title="上一个角色">&lt;</a>
+  <a class="skin-arrow skin-arrow-right" href="/<%= nextChar %>" title="下一个角色">&gt;</a>
   <div class="skin-indicator" id="skin-indicator"></div>
+
+  <div class="skin-bar-wrap" id="skin-bar-wrap" style="display:none">
+    <div class="skin-bar" id="skin-bar"></div>
+  </div>
 
   <div class="anim-bar-wrap">
     <div class="anim-bar" id="anim-bar"></div>
@@ -116,16 +160,29 @@
   <script src="/public/spine-player/spine-player.js"></script>
   <script src="/public/js/player-core.js"></script>
   <script>
-    function nextSkin() { window.Live2DPlayer.nextSkin(); }
-    function prevSkin() { window.Live2DPlayer.prevSkin(); }
+    var allChars = <%- JSON.stringify(allChars) %>;
+    var currentIndex = <%- currentIndex %>;
 
-    window.Live2DPlayer.on('onSkinChange', function(index, name, total) {
-      document.getElementById('skin-indicator').textContent = (index + 1) + ' / ' + total;
-    });
+    // Show character position indicator
+    document.getElementById('skin-indicator').textContent = (currentIndex + 1) + ' / ' + allChars.length;
 
     window.Live2DPlayer.on('onReady', function(p, animations, skinNames) {
-      var count = skinNames.length;
-      document.getElementById('skin-indicator').textContent = '1 / ' + count;
+      // Build skin bar (if more than 1 skin)
+      if (skinNames.length > 1) {
+        var skinBar = document.getElementById('skin-bar');
+        var curSkin = window.Live2DPlayer.getCurrentSkin();
+        skinNames.forEach(function(name, i) {
+          var chip = document.createElement('span');
+          chip.className = 'skin-chip' + (i === curSkin ? ' active' : '');
+          chip.textContent = name;
+          chip.addEventListener('click', function() {
+            window.Live2DPlayer.switchSkin(i);
+          });
+          skinBar.appendChild(chip);
+        });
+        document.getElementById('skin-bar-wrap').style.display = '';
+        updateSkinIndicator();
+      }
 
       // Build animation bar (exclude idle and action)
       var bar = document.getElementById('anim-bar');
@@ -141,13 +198,27 @@
       });
     });
 
-    // Drag to switch skin (anywhere on page)
+    function updateSkinIndicator() {
+      var idx = window.Live2DPlayer.getCurrentSkin();
+      var total = window.Live2DPlayer.getSkinCount();
+      var chips = document.querySelectorAll('.skin-chip');
+      chips.forEach(function(c, i) { c.classList.toggle('active', i === idx); });
+      var indicator = document.getElementById('skin-indicator');
+      var charInfo = (currentIndex + 1) + ' / ' + allChars.length;
+      indicator.textContent = total > 1 ? '角色 ' + charInfo + ' · 皮肤 ' + (idx + 1) + '/' + total : '角色 ' + charInfo;
+    }
+
+    window.Live2DPlayer.on('onSkinChange', function() { updateSkinIndicator(); });
+
+    // Drag to switch character (anywhere on page except anim bar), wraps around
     (function() {
       var dragStart = 0;
       var threshold = 60;
       var tracking = false;
+      var len = allChars.length;
 
       document.addEventListener('mousedown', function(e) {
+        if (e.target.closest('#anim-bar')) return;
         dragStart = e.clientX;
         tracking = true;
       });
@@ -156,8 +227,11 @@
         tracking = false;
         var dx = e.clientX - dragStart;
         if (Math.abs(dx) >= threshold) {
-          if (dx > 0) prevSkin();
-          else nextSkin();
+          if (dx > 0) {
+            window.location.href = '/' + allChars[(currentIndex - 1 + len) % len];
+          } else {
+            window.location.href = '/' + allChars[(currentIndex + 1) % len];
+          }
         }
       });
     })();
@@ -173,17 +247,16 @@
       var isDown = false, startX, scrollLeft;
       bar.addEventListener('mousedown', function(e) {
         isDown = true;
-        startX = e.pageX - bar.offsetLeft;
+        startX = e.pageX;
         scrollLeft = bar.scrollLeft;
-      });
-      bar.addEventListener('mouseleave', function() { isDown = false; });
-      bar.addEventListener('mouseup', function() { isDown = false; });
-      bar.addEventListener('mousemove', function(e) {
-        if (!isDown) return;
         e.preventDefault();
-        var x = e.pageX - bar.offsetLeft;
-        bar.scrollLeft = scrollLeft - (x - startX);
       });
+      document.addEventListener('mousemove', function(e) {
+        if (!isDown) return;
+        var dx = e.pageX - startX;
+        bar.scrollLeft = scrollLeft - dx;
+      });
+      document.addEventListener('mouseup', function() { isDown = false; });
     })();
   </script>
 </body>

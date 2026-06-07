@@ -31,6 +31,10 @@ router.get('/:character', (req, res, next) => {
     return res.status(500).send('Missing model files (need .skel, .atlas, .png)');
   }
 
+  const characters = listCharacters(config.assetsDir);
+  const charNames = characters.map(c => c.name);
+  const currentIndex = charNames.indexOf(req.params.character);
+
   res.render('character', {
     name: req.params.character,
     skel: `/assets/${req.params.character}/${model.skel}`,
@@ -40,6 +44,10 @@ router.get('/:character', (req, res, next) => {
     loop: parseBoolQuery(req.query.loop),
     touchAnim: req.query.touch || DEFAULT_TOUCH_ANIM,
     hideBack: req.query.screenshot === '1',
+    allChars: charNames,
+    currentIndex: currentIndex,
+    prevChar: currentIndex > 0 ? charNames[currentIndex - 1] : charNames[charNames.length - 1],
+    nextChar: currentIndex < charNames.length - 1 ? charNames[currentIndex + 1] : charNames[0],
   });
 });
 

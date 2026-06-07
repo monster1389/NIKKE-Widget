@@ -20,7 +20,7 @@ src/
 │   └── preview-service.js     # 预览图生成
 ├── middleware/
 │   ├── cors.js
-│   ├── domain-guard.js
+│   ├── domain-guard.js        # 域名访问只读检测，通过 config.allowHosts 判断
 │   └── error-handler.js
 └── lib/
     ├── download-file.js       # 纯 HTTP 下载函数
@@ -30,8 +30,8 @@ public/js/
 └── player-core.js             # SpinePlayer 核心逻辑（纯 JS，通过 data-* 属性配置）
 
 views/
-├── home.ejs                   # 首页 + 角色管理按钮
-├── character.ejs              # 角色展示页 + 皮肤/动画控件
+├── home.ejs                   # 首页 + 角色管理按钮（域名访问时隐藏）
+├── character.ejs              # 角色展示页 + 角色导航 + 皮肤栏 + 动画栏
 └── embed.ejs                  # 嵌入脚本（内联 player-core.js）
 
 scripts/scrape-spine.js        # GameKee 爬虫 CLI
@@ -46,21 +46,28 @@ assets/                        # 角色模型（每个角色一个文件夹）
 
 ## 路由
 
-- `GET /` — 角色列表首页（可删除、重命名角色）
-- `GET /:character` — 角色展示页（透明背景，皮肤切换 + 动画栏）
+- `GET /` — 角色列表首页（本地访问时可删除、重命名、下载角色；域名访问只读）
+- `GET /:character` — 角色展示页（透明背景，角色导航 + 皮肤切换 + 动画栏）
 - `GET /embed/:character.js` — 生成自执行 JS 脚本，供父页面直接嵌入
-- `POST /api/scrape` — SSE 端点，抓取 GameKee 角色
-- `DELETE /api/characters/:name` — 删除角色
-- `PUT /api/characters/:name` — 重命名角色 `{ newName: "xxx" }`
+- `POST /api/scrape` — SSE 端点，抓取 GameKee 角色（域名访问返回 403）
+- `DELETE /api/characters/:name` — 删除角色（域名访问返回 403）
+- `PUT /api/characters/:name` — 重命名角色 `{ newName: "xxx" }`（域名访问返回 403）
+
+## 域名访问只读
+
+通过中间件 `domain-guard.js` 检测访问来源。`config.js` 中 `allowHosts` 配置允许写操作的主机模式（支持通配符 `*`），无点号主机名（如 `rpi`）始终允许。
+
+环境变量 `ALLOW_HOSTS` 可逗号分隔覆盖，如 `ALLOW_HOSTS=myhost,192.168.*`。
 
 ## 角色展示页控件
 
-- **皮肤切换**: 页面左右边缘箭头按钮（`<` `>`）循环切换皮肤；也可按住页面任意位置左右拖动切换
-- **动画栏**: 角色下方横向滚动列表（鼠标滚轮/拖动滚动），列出除 idle/action 外的所有动画。点击播放一遍回 idle。点击角色 canvas → 播放 action
+- **角色导航**: 页面左右边缘箭头按钮（`<` `>`）切换上一个/下一个角色，首尾循环；也可按住页面任意位置（动画栏除外）左右拖动切换
+- **皮肤栏**: 页面顶部居中胶囊条，列出皮肤名称（如 default、acc）。点击切换皮肤，当前选中高亮。只有 1 个皮肤时自动隐藏
+- **动画栏**: 页面底部居中胶囊条，列出除 idle/action 外的所有动画。鼠标滚轮/拖动滚动。点击播放一遍回 idle。点击角色 canvas → 播放 action（可打断重放）
 
 ## Web 抓取功能
 
-首页顶部表单填入 GameKee URL 和角色名，点击下载按钮。
+首页顶部表单填入 GameKee URL 和角色名，点击下载按钮。域名访问时表单隐藏。
 
 **流程**: 后端 `src/services/scraper-service.js` 调用 Puppeteer 抓取 Spine 文件 → SSE 实时推送进度 → 完成后自动生成预览 → 1s 后页面自动刷新。
 
@@ -111,6 +118,18 @@ assets/                        # 角色模型（每个角色一个文件夹）
 </div>
 ```
 
+| 属性 | 说明 |
+|------|------|
+| data-skels | .skel 文件 URL |
+| data-atlas | .atlas 文件 URL |
+| data-animation | 初始待机动画（默认 idle） |
+| data-loop | 待机是否循环（默认 true） |
+| data-touch | 点击播放的动画（默认 action） |
+| data-viewport | padded（20% margin 居中）或 raw（精确包围盒） |
+| data-send-size | 是否 postMessage 发送角色尺寸 |
+
+默认皮肤选择名称含 "acc" 的（不区分大小写），找不到则选第一个。
+
 ## postMessage API
 
 父页面通过 postMessage 控制角色（iframe 和直接嵌入均支持）：
@@ -118,15 +137,19 @@ assets/                        # 角色模型（每个角色一个文件夹）
 - `{ action: 'play', animation: 'delight' }` — 播放一次性动画
 - `{ action: 'setIdle', animation: 'delight' }` — 切换待机动画
 - `{ action: 'getAnimations' }` — 查询可用动画
+- `{ action: 'setSkin', index: 1 }` — 按索引切换皮肤
+- `{ action: 'setSkin', name: 'acc' }` — 按名称切换皮肤
+- `{ action: 'nextSkin' }` / `{ action: 'prevSkin' }` — 循环切换皮肤
+- `{ action: 'getSkins' }` — 查询皮肤列表
 
 角色发送给父页面的事件：
 
 - `{ type: 'size', width, height }` — 角色原始包围盒尺寸（直接嵌入时用于动态调容器大小）
-- `{ type: 'ready', animations }` — 初始化完成，animations 为可用动画列表
+- `{ type: 'ready', animations, skins }` — 初始化完成
 - `{ type: 'playing', animation }` — 开始播放一次性动画
 - `{ type: 'ended', animation }` — 一次性动画播放完毕
 
 ## 添加新角色
 
-1. **Web 抓取**: 首页表单填入 GameKee URL + 角色名，一键下载
+1. **Web 抓取**: 首页表单填入 GameKee URL + 角色名，一键下载（仅本地/允许主机）
 2. **手动**: 在 `assets/` 下新建文件夹，放入 .skel .atlas .png 文件，服务自动发现

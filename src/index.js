@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const { generatePreviews } = require('./preview-generator');
 
 const app = express();
 const PORT = process.env.PORT || 8090;
@@ -16,40 +17,11 @@ app.set('views', path.join(__dirname, '..', 'views'));
 app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
 app.use('/public', express.static(path.join(__dirname, '..', 'public')));
 
+const { getCharacters } = require('./get-characters');
+
 app.get('/', (req, res) => {
   const assetsDir = path.join(__dirname, '..', 'assets');
-
-  let entries;
-  try {
-    entries = fs.readdirSync(assetsDir);
-  } catch {
-    return res.render('home', { characters: [] });
-  }
-
-  const characters = [];
-  for (const name of entries) {
-    let stat;
-    try {
-      stat = fs.statSync(path.join(assetsDir, name));
-    } catch {
-      continue;
-    }
-    if (!stat.isDirectory()) continue;
-
-    const dir = path.join(assetsDir, name);
-    let files;
-    try {
-      files = fs.readdirSync(dir);
-    } catch {
-      continue;
-    }
-    const preview = files.find(f => f === 'preview.png')
-      || files.find(f => f.endsWith('.png'));
-    characters.push({
-      name,
-      preview: preview ? `/assets/${name}/${preview}` : null,
-    });
-  }
+  const characters = getCharacters(assetsDir);
   res.render('home', { characters });
 });
 
@@ -136,4 +108,9 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Live2D service running on http://localhost:${PORT}`);
+
+  const assetsDir = path.join(__dirname, '..', 'assets');
+  const characters = getCharacters(assetsDir);
+  const baseUrl = `http://localhost:${PORT}`;
+  generatePreviews(characters, baseUrl);
 });

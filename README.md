@@ -40,6 +40,10 @@ embed 脚本自动在 `#live2d-widget` 内初始化角色，并发送 `size` 事
 
 ### 抓取角色
 
+**Web 方式（推荐）：** 在首页顶部表单填入 GameKee URL 和角色名，点击下载即可。实时显示下载进度，完成后自动生成预览图并刷新页面。
+
+**CLI 方式：**
+
 ```bash
 node scripts/scrape-spine.js <gamekee-url> <character-name>
 # 例: node scripts/scrape-spine.js https://www.gamekee.com/nikke/tj/703135.html anis

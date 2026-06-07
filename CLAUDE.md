@@ -43,32 +43,27 @@ Express 服务，默认端口 8090（`config.js` 可改），提供 Spine 角色
 
 ## 嵌入方式
 
-### 方式一：直接嵌入（推荐）
-
-父页面加载 spine-player.js 和 embed 脚本，直接在页面 DOM 中创建角色：
+只需两行代码，embed 脚本自动处理 CSS 注入、按钮创建、依赖加载、角色初始化和容器尺寸适配。
 
 ```html
-<div id="live2d-widget" style="width:240px;height:350px"></div>
-<script src="http://rpi:8090/public/spine-player/spine-player.js"></script>
-<script src="http://rpi:8090/embed/anis.js?animation=idle&loop=true&touch=action"></script>
+<div id="live2d-widget" style="position:fixed;bottom:16px;right:16px"></div>
+<script src="http://rpi:8090/embed/anis.js?controls=true&targetHeight=400&animation=idle&loop=true&touch=action"></script>
 ```
 
-脚本自动在 `#live2d-widget` 容器内初始化角色，并向父页面发送 `size` 事件告知角色原始尺寸，父页面可按需动态调整容器大小。无 iframe 视口，透明背景直达父页面。
+`#live2d-widget` 容器由父页面控制位置和初始大小，其余全部由脚本自动完成。
 
-### 方式二：iframe（有白底限制）
+**透明背景**: 无 iframe 视口，角色透明背景直达父页面（canvas alpha + premultipliedAlpha）。
 
-`<iframe src="http://rpi:8090/anis?animation=idle&loop=true&touch=action">`
+## Embed 脚本参数
 
-浏览器视口默认白色，iframe 透明无法穿透。
-
-## 角色页面参数
-
-`GET /anis?animation=idle&loop=true&touch=action`
+`GET /embed/:character.js?controls=true&targetHeight=400&animation=idle&loop=true&touch=action`
 
 | 参数 | 默认 | 说明 |
 |------|------|------|
-| animation | idle | 待机动画 |
-| loop | true | 待机循环 |
+| controls | true | 显示关闭（×）和恢复（○）按钮 |
+| targetHeight | 自动（桌面 400 / 移动 250） | 角色缩放目标高度（px） |
+| animation | idle | 初始待机动画 |
+| loop | true | 待机动画是否循环 |
 | touch | action | 点击播放的动画 |
 
 ## postMessage API

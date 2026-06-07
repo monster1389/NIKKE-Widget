@@ -5,6 +5,11 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 8090;
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  next();
+});
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '..', 'views'));
 

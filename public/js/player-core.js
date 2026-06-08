@@ -65,11 +65,7 @@
         skinNames = p.skeleton.data.skins.map(function(s) { return s.name; });
 
         if (skinNames.length > 0) {
-          var accIdx = -1;
-          for (var si = 0; si < skinNames.length; si++) {
-            if (skinNames[si].toLowerCase().indexOf('acc') >= 0) { accIdx = si; break; }
-          }
-          currentSkinIndex = accIdx >= 0 ? accIdx : 0;
+          currentSkinIndex = skinNames.length - 1;
           p.skeleton.setSkinByName(skinNames[currentSkinIndex]);
           p.skeleton.setSlotsToSetupPose();
         }

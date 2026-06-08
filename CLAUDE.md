@@ -129,7 +129,7 @@ assets/                        # 角色模型（每个角色一个文件夹）
 | data-world-height | padded 模式下固定 viewport 高度（世界单位），不设则自动计算 |
 | data-send-size | 是否 postMessage 发送角色尺寸 |
 
-默认皮肤选择名称含 "acc" 的（不区分大小写），找不到则选第一个。
+默认皮肤选最后一个（通常非 default，如 acc、bg 等）。
 
 ## postMessage API
 

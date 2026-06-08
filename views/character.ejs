@@ -140,7 +140,7 @@
        data-loop="<%= loop %>"
        data-touch="<%= touchAnim %>"
        data-viewport="padded"
-       data-world-height="2000">
+       data-world-height="2400">
   </div>
 
   <% if (!hideBack) { %>
@@ -186,10 +186,9 @@
         updateSkinIndicator();
       }
 
-      // Build animation bar (exclude idle and action)
+      // Build animation bar
       var bar = document.getElementById('anim-bar');
       animations.forEach(function(name) {
-        if (name === 'idle' || name === 'action') return;
         var chip = document.createElement('span');
         chip.className = 'anim-chip';
         chip.textContent = name;

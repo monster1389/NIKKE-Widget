@@ -219,15 +219,14 @@
       var tracking = false;
       var len = allChars.length;
 
-      document.addEventListener('mousedown', function(e) {
-        if (e.target.closest('#anim-bar')) return;
-        dragStart = e.clientX;
+      function onStart(x) {
+        dragStart = x;
         tracking = true;
-      });
-      document.addEventListener('mouseup', function(e) {
+      }
+      function onEnd(x) {
         if (!tracking) return;
         tracking = false;
-        var dx = e.clientX - dragStart;
+        var dx = x - dragStart;
         if (Math.abs(dx) >= threshold) {
           if (dx > 0) {
             window.location.href = '/' + allChars[(currentIndex - 1 + len) % len];
@@ -235,6 +234,21 @@
             window.location.href = '/' + allChars[(currentIndex + 1) % len];
           }
         }
+      }
+
+      document.addEventListener('mousedown', function(e) {
+        if (e.target.closest('#anim-bar')) return;
+        onStart(e.clientX);
+      });
+      document.addEventListener('mouseup', function(e) {
+        onEnd(e.clientX);
+      });
+      document.addEventListener('touchstart', function(e) {
+        if (e.target.closest('#anim-bar')) return;
+        onStart(e.touches[0].clientX);
+      });
+      document.addEventListener('touchend', function(e) {
+        onEnd(e.changedTouches[0].clientX);
       });
     })();
 

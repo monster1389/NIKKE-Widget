@@ -96,30 +96,32 @@
     .skin-chip.active { background: rgba(255,255,255,0.22); color: #fff; border-color: rgba(255,255,255,0.4); }
 
     /* Animation bar */
-    .anim-bar-wrap {
+    .anim-bar-container {
       position: fixed;
       bottom: 16px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .anim-bar-wrap {
       background: rgba(0,0,0,0.4);
       border-radius: 20px;
       padding: 6px 12px;
       max-width: 50vw;
     }
     .anim-toggle-btn {
-      position: fixed;
-      bottom: 16px;
-      left: 16px;
-      z-index: 10;
-      width: 24px; height: 24px;
+      flex-shrink: 0;
+      width: 30px; height: 30px;
       padding: 0;
       background: rgba(0,0,0,0.4);
       color: rgba(255,255,255,0.7);
       border: 1px solid rgba(255,255,255,0.15);
       border-radius: 50%;
-      font-size: 14px;
-      line-height: 22px;
+      font-size: 16px;
+      line-height: 28px;
       text-align: center;
       cursor: pointer;
     }
@@ -172,9 +174,11 @@
     <div class="skin-bar" id="skin-bar"></div>
   </div>
 
-  <button class="anim-toggle-btn">&lt;</button>
-  <div class="anim-bar-wrap">
-    <div class="anim-bar" id="anim-bar"></div>
+  <div class="anim-bar-container">
+    <button class="anim-toggle-btn">&lt;</button>
+    <div class="anim-bar-wrap">
+      <div class="anim-bar" id="anim-bar"></div>
+    </div>
   </div>
 
   <script src="/public/spine-player/spine-player.js"></script>

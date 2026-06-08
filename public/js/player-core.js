@@ -11,6 +11,7 @@
   var touchAnimName = ds.touch || 'action';
   var viewportMode = ds.viewport || 'padded';
   var sendSize = ds.sendSize === 'true';
+  var worldHeight = parseFloat(ds.worldHeight) || 0;
   var skelUrl = ds.skels || ds.skel;
   var atlasUrl = ds.atlas;
 
@@ -99,16 +100,25 @@
 
         var frozenViewport;
         if (viewportMode === 'padded') {
-          var pad = 0.2;
-          var size = Math.max(maxX - minX, maxY - minY) * (1 + pad);
           var cx = (minX + maxX) / 2;
           var cy = (minY + maxY) / 2;
-          frozenViewport = {
-            x: cx - size / 2,
-            y: cy - size / 2,
-            width: size,
-            height: size
-          };
+          if (worldHeight > 0) {
+            frozenViewport = {
+              x: cx - worldHeight / 2,
+              y: cy - worldHeight / 2,
+              width: worldHeight,
+              height: worldHeight
+            };
+          } else {
+            var pad = 0.2;
+            var size = Math.max(maxX - minX, maxY - minY) * (1 + pad);
+            frozenViewport = {
+              x: cx - size / 2,
+              y: cy - size / 2,
+              width: size,
+              height: size
+            };
+          }
         } else {
           frozenViewport = {
             x: minX,

@@ -102,19 +102,19 @@
       left: 50%;
       transform: translateX(-50%);
       z-index: 10;
-      display: flex;
-      align-items: center;
-      gap: 4px;
       background: rgba(0,0,0,0.4);
       border-radius: 20px;
       padding: 6px 12px;
       max-width: 50vw;
     }
     .anim-toggle-btn {
-      flex-shrink: 0;
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      z-index: 10;
       width: 24px; height: 24px;
       padding: 0;
-      background: rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.4);
       color: rgba(255,255,255,0.7);
       border: 1px solid rgba(255,255,255,0.15);
       border-radius: 50%;
@@ -123,7 +123,7 @@
       text-align: center;
       cursor: pointer;
     }
-    .anim-toggle-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+    .anim-toggle-btn:hover { background: rgba(0,0,0,0.7); color: #fff; }
     .anim-bar {
       display: flex;
       gap: 6px;
@@ -172,8 +172,8 @@
     <div class="skin-bar" id="skin-bar"></div>
   </div>
 
+  <button class="anim-toggle-btn">&lt;</button>
   <div class="anim-bar-wrap">
-    <button class="anim-toggle-btn">&lt;</button>
     <div class="anim-bar" id="anim-bar"></div>
   </div>
 
@@ -271,11 +271,11 @@
 
     // Animation bar: toggle collapse/expand
     (function() {
-      var bar = document.getElementById('anim-bar');
+      var wrap = document.querySelector('.anim-bar-wrap');
       var btn = document.querySelector('.anim-toggle-btn');
       btn.addEventListener('click', function() {
-        var hidden = bar.style.display === 'none';
-        bar.style.display = hidden ? '' : 'none';
+        var hidden = wrap.style.display === 'none';
+        wrap.style.display = hidden ? '' : 'none';
         btn.textContent = hidden ? '<' : '>';
       });
     })();

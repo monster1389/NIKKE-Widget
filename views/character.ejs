@@ -278,8 +278,8 @@
       var wrap = document.querySelector('.anim-bar-wrap');
       var btn = document.querySelector('.anim-toggle-btn');
       btn.addEventListener('click', function() {
-        var hidden = wrap.style.display === 'none';
-        wrap.style.display = hidden ? '' : 'none';
+        var hidden = wrap.style.visibility === 'hidden';
+        wrap.style.visibility = hidden ? '' : 'hidden';
         btn.textContent = hidden ? '<' : '>';
       });
     })();

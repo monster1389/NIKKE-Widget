@@ -18,6 +18,7 @@
   var animations = [];
   var currentIdleAnim = defaultAnim;
   var actionPlaying = false;
+  var canvasClickEnabled = true;
   var player;
   var currentSkinIndex = 0;
   var skinNames = [];
@@ -150,6 +151,7 @@
         });
 
         p.canvas.addEventListener('click', function() {
+          if (!canvasClickEnabled) return;
           if (animations.indexOf(touchAnimName) < 0) return;
           actionPlaying = true;
           player.setAnimation(touchAnimName, false);
@@ -205,5 +207,6 @@
     getCurrentSkin: function() { return currentSkinIndex; },
     getAnimations: function() { return animations; },
     on: function(event, fn) { callbacks[event] = fn; },
+    setCanvasClick: function(enabled) { canvasClickEnabled = enabled; },
   };
 })();

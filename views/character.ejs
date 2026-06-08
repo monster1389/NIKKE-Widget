@@ -149,6 +149,7 @@
       transition: background 0.2s, border-color 0.2s;
     }
     .anim-chip:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.4); }
+    .anim-chip.playing { background: rgba(64,128,255,0.35); border-color: rgba(64,128,255,0.6); color: #fff; }
   </style>
 </head>
 <body>
@@ -215,7 +216,10 @@
         chip.className = 'anim-chip';
         chip.textContent = name;
         chip.addEventListener('click', function() {
-          window.Live2DPlayer.playAnimation(name, false);
+          window.Live2DPlayer.playAnimation(name, true);
+          document.querySelectorAll('.anim-chip').forEach(function(c) {
+            c.classList.toggle('playing', c === chip);
+          });
         });
         bar.appendChild(chip);
       });
@@ -281,6 +285,15 @@
         var hidden = wrap.style.visibility === 'hidden';
         wrap.style.visibility = hidden ? '' : 'hidden';
         btn.textContent = hidden ? '<' : '>';
+        if (!hidden) {
+          // collapsing: enable canvas click, clear highlights, back to idle
+          document.querySelectorAll('.anim-chip').forEach(function(c) { c.classList.remove('playing'); });
+          window.Live2DPlayer.playAnimation('idle', true);
+          window.Live2DPlayer.setCanvasClick(true);
+        } else {
+          // expanding: disable canvas click
+          window.Live2DPlayer.setCanvasClick(false);
+        }
       });
     })();
 

@@ -183,8 +183,8 @@
   function switchCharacter(skelUrl, atlasUrl) {
     if (!player) return;
     try {
-      if (player.canvas && player.canvas.parentNode) {
-        player.canvas.remove();
+      if (player.dispose) {
+        player.dispose();
       }
     } catch (e) {
       // ignore cleanup errors

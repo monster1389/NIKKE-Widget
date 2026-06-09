@@ -66,18 +66,16 @@ describe('player-core.js', () => {
     expect(typeof sandbox.window.Live2DPlayer.setCanvasClick).toBe('function');
   });
 
-  it('switchCharacter removes old canvas and calls SpinePlayer with new URLs', () => {
+  it('switchCharacter disposes old player and calls SpinePlayer with new URLs', () => {
     var sandbox = makeSandbox();
     var newPlayerCreated = false;
     var lastBinaryUrl = null;
     var lastAtlasUrl = null;
-    var removedCount = 0;
+    var disposeCount = 0;
 
     var mockCanvas = {
       style: {},
       addEventListener: function () {},
-      parentNode: {},
-      remove: function () { removedCount++; },
     };
 
     sandbox.spine.SpinePlayer = function (container, opts) {
@@ -86,6 +84,7 @@ describe('player-core.js', () => {
       lastAtlasUrl = opts.atlasUrl;
       return {
         canvas: mockCanvas,
+        dispose: function () { disposeCount++; },
         skeleton: {
           data: { animations: [], skins: [] },
           setSkinByName: function () {},
@@ -115,8 +114,8 @@ describe('player-core.js', () => {
     // Call switchCharacter
     player.switchCharacter('/assets/other/model.skel', '/assets/other/model.atlas');
 
-    // Old canvas should be removed
-    expect(removedCount).toBe(1);
+    // Old player should be disposed
+    expect(disposeCount).toBe(1);
     // New player created
     expect(newPlayerCreated).toBe(true);
     expect(lastBinaryUrl).toBe('/assets/other/model.skel');

@@ -6,6 +6,7 @@ Live2D Spine 角色展示服务。默认端口 8090，配置在 `config.js`。
 
 ```bash
 node src/server.js                    # 直接启动
+# 或
 pm2 start ecosystem.config.cjs        # PM2 守护
 ```
 
@@ -17,12 +18,12 @@ pm2 start ecosystem.config.cjs        # PM2 守护
 
 ```html
 <div id="live2d-widget" style="position:fixed;bottom:16px;right:16px;width:240px;height:350px"></div>
-<script src="http://rpi:8090/embed/anis.js?animation=idle&loop=true&touch=action"></script>
+<script src="http://localhost:8090/embed/anis.js?animation=idle&loop=true&touch=action"></script>
 ```
 
 脚本自动加载依赖、注入关闭/恢复/切换按钮、适配容器尺寸。
 
-**iframe 嵌入：** `<iframe src="http://rpi:8090/anis">`（会有白底）
+**iframe 嵌入：** `<iframe src="http://localhost:8090/anis">`（会有白底，直接嵌入无此问题）
 
 ### Embed 参数
 

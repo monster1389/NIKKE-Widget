@@ -70,7 +70,7 @@
 
   function switchToCharacter(target) {
     if (!window.Live2DPlayer || !window.Live2DPlayer.switchCharacter) return;
-    window.Live2DPlayer.switchCharacter(target.skel, target.atlas);
+    window.Live2DPlayer.switchCharacter(BASE + target.skel, BASE + target.atlas);
     currentCharName = target.name;
   }
 

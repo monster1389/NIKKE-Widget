@@ -7,20 +7,27 @@
   style.textContent = [
     '#' + CONTAINER_ID + ' { z-index: 9999; pointer-events: none; }',
     '#' + CONTAINER_ID + ' canvas { pointer-events: auto; }',
-    '#live2d-close, #live2d-restore {',
-    '  position: fixed; bottom: 8px; right: 8px;',
+    '#live2d-close, #live2d-restore, #live2d-random, #live2d-prev, #live2d-next {',
+    '  position: fixed; right: 8px;',
     '  width: 22px; height: 22px; padding: 0;',
     '  border: none; border-radius: 50%;',
     '  background: rgba(0,0,0,0.4); color: #fff;',
     '  font-size: 14px; line-height: 22px;',
     '  text-align: center; cursor: pointer; z-index: 9999;',
     '}',
-    '#live2d-close:hover, #live2d-restore:hover { background: rgba(0,0,0,0.7); }'
+    '#live2d-close, #live2d-restore { bottom: 8px; }',
+    '#live2d-random { bottom: 86px; }',
+    '#live2d-prev { bottom: 60px; }',
+    '#live2d-next { bottom: 34px; }',
+    '#live2d-close:hover, #live2d-restore:hover, #live2d-random:hover, #live2d-prev:hover, #live2d-next:hover { background: rgba(0,0,0,0.7); }'
   ].join('\n');
   document.head.appendChild(style);
 
   var showControls = <%- controls %>;
-  var closeBtn, restoreBtn;
+  var currentCharName = '<%- name %>';
+  var characters = [];
+  var closeBtn, restoreBtn, randomBtn, prevBtn, nextBtn;
+
   if (showControls) {
     closeBtn = document.createElement('button');
     closeBtn.id = 'live2d-close';
@@ -30,6 +37,9 @@
       var c = document.getElementById(CONTAINER_ID);
       if (c) c.style.display = 'none';
       closeBtn.style.display = 'none';
+      if (randomBtn) randomBtn.style.display = 'none';
+      if (prevBtn) prevBtn.style.display = 'none';
+      if (nextBtn) nextBtn.style.display = 'none';
       restoreBtn.style.display = '';
     };
     document.body.appendChild(closeBtn);
@@ -43,9 +53,80 @@
       var c = document.getElementById(CONTAINER_ID);
       if (c) c.style.display = '';
       closeBtn.style.display = '';
+      if (randomBtn) randomBtn.style.display = '';
+      if (prevBtn) prevBtn.style.display = '';
+      if (nextBtn) nextBtn.style.display = '';
       restoreBtn.style.display = 'none';
     };
     document.body.appendChild(restoreBtn);
+  }
+
+  function findCurrentIndex() {
+    for (var i = 0; i < characters.length; i++) {
+      if (characters[i].name === currentCharName) return i;
+    }
+    return -1;
+  }
+
+  function switchToCharacter(target) {
+    if (!window.Live2DPlayer || !window.Live2DPlayer.switchCharacter) return;
+    window.Live2DPlayer.switchCharacter(target.skel, target.atlas);
+    currentCharName = target.name;
+  }
+
+  function renderSwitchButtons() {
+    if (characters.length <= 1) return;
+
+    randomBtn = document.createElement('button');
+    randomBtn.id = 'live2d-random';
+    randomBtn.textContent = '⟳';
+    randomBtn.title = '随机角色';
+    randomBtn.onclick = function() {
+      var others = characters.filter(function(c) { return c.name !== currentCharName; });
+      if (others.length === 0) return;
+      var target = others[Math.floor(Math.random() * others.length)];
+      switchToCharacter(target);
+    };
+    document.body.appendChild(randomBtn);
+
+    prevBtn = document.createElement('button');
+    prevBtn.id = 'live2d-prev';
+    prevBtn.textContent = '◀';
+    prevBtn.title = '上一个角色';
+    prevBtn.onclick = function() {
+      var idx = findCurrentIndex();
+      if (idx < 0) return;
+      var prevIdx = idx <= 0 ? characters.length - 1 : idx - 1;
+      switchToCharacter(characters[prevIdx]);
+    };
+    document.body.appendChild(prevBtn);
+
+    nextBtn = document.createElement('button');
+    nextBtn.id = 'live2d-next';
+    nextBtn.textContent = '▶';
+    nextBtn.title = '下一个角色';
+    nextBtn.onclick = function() {
+      var idx = findCurrentIndex();
+      if (idx < 0) return;
+      var nextIdx = idx >= characters.length - 1 ? 0 : idx + 1;
+      switchToCharacter(characters[nextIdx]);
+    };
+    document.body.appendChild(nextBtn);
+  }
+
+  function loadCharacterList() {
+    fetch(BASE + '/api/characters')
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function(list) {
+        characters = list;
+        renderSwitchButtons();
+      })
+      .catch(function(err) {
+        console.warn('Live2D embed: failed to load character list', err);
+      });
   }
 
   var targetHeight = <%- targetHeight %>;
@@ -96,5 +177,10 @@
       console.error('Live2D embed: failed to load spine-player.js');
     };
     document.head.appendChild(s);
+  }
+
+  // Start loading character list in parallel (does not block player init)
+  if (showControls) {
+    loadCharacterList();
   }
 })();

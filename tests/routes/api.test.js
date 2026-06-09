@@ -99,4 +99,39 @@ describe('api routes', () => {
       expect(res.status).toBe(400);
     });
   });
+
+  describe('GET /api/characters', () => {
+    it('returns sorted character list with skel/atlas URLs', async () => {
+      // testchar0 (from beforeEach) only has model.skel, no atlas — should be skipped
+      fs.mkdirSync(path.join(tempDir, 'zeta'));
+      fs.writeFileSync(path.join(tempDir, 'zeta', 'model.skel'), '');
+      fs.writeFileSync(path.join(tempDir, 'zeta', 'model.atlas'), '');
+      fs.mkdirSync(path.join(tempDir, 'alpha'));
+      fs.writeFileSync(path.join(tempDir, 'alpha', 'data.skel'), '');
+      fs.writeFileSync(path.join(tempDir, 'alpha', 'data.atlas'), '');
+
+      const res = await request(makeApp()).get('/api/characters');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([
+        { name: 'alpha', skel: '/assets/alpha/data.skel', atlas: '/assets/alpha/data.atlas' },
+        { name: 'zeta', skel: '/assets/zeta/model.skel', atlas: '/assets/zeta/model.atlas' },
+      ]);
+    });
+
+    it('returns empty array for empty assets dir', async () => {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+      fs.mkdirSync(tempDir);
+
+      const res = await request(makeApp()).get('/api/characters');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    it('skips characters missing skel or atlas', async () => {
+      // testchar0 exists from beforeEach but only has model.skel, no atlas
+      const res = await request(makeApp()).get('/api/characters');
+      expect(res.status).toBe(200);
+      expect(res.body.find(c => c.name === 'testchar0')).toBeUndefined();
+    });
+  });
 });

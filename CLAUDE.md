@@ -52,6 +52,7 @@ assets/                        # 角色模型（每个角色一个文件夹）
 - `POST /api/scrape` — SSE 端点，抓取 GameKee 角色（域名访问返回 403）
 - `DELETE /api/characters/:name` — 删除角色（域名访问返回 403）
 - `PUT /api/characters/:name` — 重命名角色 `{ newName: "xxx" }`（域名访问返回 403）
+- `GET /api/characters` — 返回所有角色名及模型文件 URL（按名称排序），只读
 
 ## 域名访问只读
 
@@ -101,6 +102,16 @@ assets/                        # 角色模型（每个角色一个文件夹）
 | animation | idle | 初始待机动画 |
 | loop | true | 待机动画是否循环 |
 | touch | action | 点击播放的动画 |
+
+## Embed 切换按钮
+
+嵌入脚本在关闭按钮（×）上方提供 3 个圆形角色切换按钮（仅 `controls=true` 且角色数 > 1 时出现）：
+
+- **⟳** — 随机切换到一个与当前不同的角色
+- **◀** — 切换到上一个角色（到头循环）
+- **▶** — 切换到下一个角色（到尾循环）
+
+切换通过 `fetch /api/characters` 获取角色列表，调用 `Live2DPlayer.switchCharacter()` 动态热切换（销毁旧 SpinePlayer + 重建），无需重新加载 embed 脚本。
 
 ## player-core.js 配置
 

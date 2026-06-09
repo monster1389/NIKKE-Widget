@@ -4,7 +4,7 @@ const config = require('../../config');
 const { deleteCharacter, renameCharacter, invalidateCache } = require('../services/character-service');
 const { scrapeGenerator } = require('../services/scraper-service');
 const { generatePreviews } = require('../services/preview-service');
-const { listCharacters } = require('../services/character-service');
+const { listCharacters, readCharacterFiles } = require('../services/character-service');
 
 const router = Router();
 let scraping = false;
@@ -117,6 +117,22 @@ router.post('/scrape', express.json(), async (req, res) => {
     scraping = false;
     if (!res.writableEnded) res.end();
   }
+});
+
+router.get('/characters', (req, res) => {
+  const characters = listCharacters(config.assetsDir);
+  const result = [];
+  for (const c of characters) {
+    const files = readCharacterFiles(config.assetsDir, c.name);
+    if (!files || !files.skel || !files.atlas) continue;
+    result.push({
+      name: c.name,
+      skel: `/assets/${c.name}/${files.skel}`,
+      atlas: `/assets/${c.name}/${files.atlas}`,
+    });
+  }
+  result.sort((a, b) => a.name.localeCompare(b.name));
+  res.json(result);
 });
 
 module.exports = router;

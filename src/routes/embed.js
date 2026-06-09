@@ -44,6 +44,8 @@ router.get('/:character.js', (req, res, next) => {
     touchAnim: req.query.touch || DEFAULT_TOUCH_ANIM,
     controls: parseBoolQuery(req.query.controls),
     targetHeight: parseInt(req.query.targetHeight) || 0,
+    bottomOffset: parseInt(req.query.bottomOffset) || 64,
+    rightOffset: parseInt(req.query.rightOffset) || 20,
     playerCoreJs: playerCoreJs,
   });
 });

@@ -87,9 +87,9 @@
     skeleton.updateWorldTransform();
 
     var frozenViewport;
+    var cx = (minX + maxX) / 2;
+    var cy = (minY + maxY) / 2;
     if (viewportMode === 'padded') {
-      var cx = (minX + maxX) / 2;
-      var cy = (minY + maxY) / 2;
       if (worldHeight > 0) {
         frozenViewport = {
           x: cx - worldHeight / 2,
@@ -107,6 +107,16 @@
           height: size
         };
       }
+    } else if (viewportMode === 'centered') {
+      var pad = 0.2;
+      var rawW = maxX - minX;
+      var rawH = maxY - minY;
+      frozenViewport = {
+        x: cx - rawW * (1 + pad) / 2,
+        y: cy - rawH * (1 + pad) / 2,
+        width: rawW * (1 + pad),
+        height: rawH * (1 + pad)
+      };
     } else {
       frozenViewport = {
         x: minX,

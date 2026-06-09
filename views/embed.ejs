@@ -17,8 +17,8 @@
     '}',
     '#live2d-close, #live2d-restore { bottom: 8px; }',
     '#live2d-random { bottom: 86px; }',
-    '#live2d-prev { bottom: 60px; }',
-    '#live2d-next { bottom: 34px; }',
+    '#live2d-prev { bottom: 60px; font-size: 10px; }',
+    '#live2d-next { bottom: 34px; font-size: 10px; }',
     '#live2d-close:hover, #live2d-restore:hover, #live2d-random:hover, #live2d-prev:hover, #live2d-next:hover { background: rgba(0,0,0,0.7); }'
   ].join('\n');
   document.head.appendChild(style);
@@ -134,12 +134,23 @@
     targetHeight = window.innerWidth < 768 ? 250 : 400;
   }
 
+  var anchorCenterX = null;
+  var bottomOffset = <%- typeof bottomOffset !== 'undefined' ? bottomOffset : 0 %>;
+  var rightOffset = <%- typeof rightOffset !== 'undefined' ? rightOffset : 0 %>;
   function onSize(width, height) {
     var container = document.getElementById(CONTAINER_ID);
     if (!container) return;
     var scale = targetHeight / height;
-    container.style.width = Math.round(width * scale) + 'px';
-    container.style.height = Math.round(height * scale) + 'px';
+    var w = Math.round(width * scale);
+    var h = Math.round(height * scale);
+    container.style.width = w + 'px';
+    container.style.height = h + 'px';
+    if (anchorCenterX === null) {
+      var rect = container.getBoundingClientRect();
+      anchorCenterX = window.innerWidth - rect.right + rect.width / 2;
+    }
+    container.style.right = Math.round(anchorCenterX - rightOffset - w / 2) + 'px';
+    container.style.bottom = Math.round(16 - bottomOffset) + 'px';
   }
 
   window.addEventListener('message', function(e) {
@@ -161,7 +172,7 @@
     container.dataset.animation = '<%- defaultAnim %>';
     container.dataset.loop = '<%- loop %>';
     container.dataset.touch = '<%- touchAnim %>';
-    container.dataset.viewport = 'raw';
+    container.dataset.viewport = 'centered';
     container.dataset.sendSize = 'true';
 
     <%- playerCoreJs %>

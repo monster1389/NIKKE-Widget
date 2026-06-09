@@ -134,9 +134,9 @@
     targetHeight = window.innerWidth < 768 ? 250 : 400;
   }
 
-  var anchorCenterX = null;
-  var bottomOffset = <%- typeof bottomOffset !== 'undefined' ? bottomOffset : 0 %>;
-  var rightOffset = <%- typeof rightOffset !== 'undefined' ? rightOffset : 0 %>;
+  var rightOffsetExtra = <%- typeof rightOffset !== 'undefined' ? rightOffset : 0 %>;
+  var bottomOffsetExtra = <%- typeof bottomOffset !== 'undefined' ? bottomOffset : 0 %>;
+
   function onSize(width, height) {
     var container = document.getElementById(CONTAINER_ID);
     if (!container) return;
@@ -145,12 +145,8 @@
     var h = Math.round(height * scale);
     container.style.width = w + 'px';
     container.style.height = h + 'px';
-    if (anchorCenterX === null) {
-      var rect = container.getBoundingClientRect();
-      anchorCenterX = window.innerWidth - rect.right + rect.width / 2;
-    }
-    container.style.right = Math.round(anchorCenterX - rightOffset - w / 2) + 'px';
-    container.style.bottom = Math.round(16 - bottomOffset) + 'px';
+    container.style.right = Math.round(80 + rightOffsetExtra - w / 2) + 'px';
+    container.style.bottom = Math.round(140 + bottomOffsetExtra - h / 2) + 'px';
   }
 
   window.addEventListener('message', function(e) {

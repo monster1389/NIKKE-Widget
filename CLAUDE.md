@@ -103,6 +103,10 @@ assets/                        # 角色模型（每个角色一个文件夹）
 | animation | idle | 初始待机动画 |
 | loop | true | 待机动画是否循环 |
 | touch | action | 点击播放的动画 |
+| rightOffset | 0 | 角色中心水平额外偏移（px），正值左移 |
+| bottomOffset | 0 | 角色中心垂直额外偏移（px），正值上移 |
+
+容器中心固定在距父页面右下角 `(80, 140)` 位置，`rightOffset`/`bottomOffset` 在此基础偏移。
 
 ## Embed 切换按钮
 

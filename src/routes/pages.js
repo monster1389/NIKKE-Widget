@@ -1,15 +1,9 @@
 const { Router } = require('express');
 const { listCharacters, readCharacterFiles } = require('../services/character-service');
+const { DEFAULT_ANIMATION, DEFAULT_TOUCH_ANIM, parseBoolQuery } = require('../lib/route-utils');
 const config = require('../../config');
 
 const router = Router();
-
-const DEFAULT_ANIMATION = 'idle';
-const DEFAULT_TOUCH_ANIM = 'action';
-
-function parseBoolQuery(val) {
-  return val !== 'false';
-}
 
 router.get('/', (req, res) => {
   res.render('home', {

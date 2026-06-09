@@ -63,7 +63,7 @@ function readCharacterFiles(assetsDir, name) {
 
   const files = fs.readdirSync(charDir);
 
-  const result = { charDir };
+  const result = {};
   for (const f of files) {
     if (f.endsWith('.skel')) result.skel = f;
     else if (f.endsWith('.atlas')) result.atlas = f;

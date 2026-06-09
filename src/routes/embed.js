@@ -2,18 +2,12 @@ const { Router } = require('express');
 const fs = require('fs');
 const path = require('path');
 const { readCharacterFiles } = require('../services/character-service');
+const { DEFAULT_ANIMATION, DEFAULT_TOUCH_ANIM, parseBoolQuery } = require('../lib/route-utils');
 const config = require('../../config');
 
 const playerCoreJs = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'player-core.js'), 'utf8');
 
 const router = Router();
-
-const DEFAULT_ANIMATION = 'idle';
-const DEFAULT_TOUCH_ANIM = 'action';
-
-function parseBoolQuery(val) {
-  return val !== 'false';
-}
 
 router.get('/:character.js', (req, res, next) => {
   let model;

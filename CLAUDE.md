@@ -24,7 +24,8 @@ src/
 │   └── error-handler.js
 └── lib/
     ├── download-file.js       # 纯 HTTP 下载函数
-    └── puppeteer-launcher.js  # Chromium 自动发现 + 启动
+    ├── puppeteer-launcher.js  # Chromium 自动发现 + 启动
+    └── route-utils.js         # parseBoolQuery + 动画默认常量（pages/embed 共享）
 
 public/js/
 └── player-core.js             # SpinePlayer 核心逻辑（纯 JS，通过 data-* 属性配置）

@@ -17,42 +17,44 @@ async function generatePreviews(characters, baseUrl) {
     return;
   }
 
-  await Promise.all(missing.map(async (char) => {
-    const page = await browser.newPage();
-    try {
-      await page.setViewport(VIEWPORT);
+  try {
+    await Promise.all(missing.map(async (char) => {
+      const page = await browser.newPage();
+      try {
+        await page.setViewport(VIEWPORT);
 
-      await page.goto(`${baseUrl}/${char.name}?screenshot=1`, {
-        waitUntil: 'domcontentloaded',
-        timeout: READY_TIMEOUT,
-      });
-
-      await page.evaluate((timeoutMs) => {
-        return new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => reject(new Error('Spine ready timeout')), timeoutMs);
-          window.addEventListener('message', function handler(e) {
-            if (e.data && e.data.type === 'ready') {
-              clearTimeout(timeout);
-              window.removeEventListener('message', handler);
-              resolve();
-            }
-          });
+        await page.goto(`${baseUrl}/${char.name}?screenshot=1`, {
+          waitUntil: 'domcontentloaded',
+          timeout: READY_TIMEOUT,
         });
-      }, READY_TIMEOUT);
 
-      await new Promise(r => setTimeout(r, RENDER_SETTLE_MS));
+        await page.evaluate((timeoutMs) => {
+          return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Spine ready timeout')), timeoutMs);
+            window.addEventListener('message', function handler(e) {
+              if (e.data && e.data.type === 'ready') {
+                clearTimeout(timeout);
+                window.removeEventListener('message', handler);
+                resolve();
+              }
+            });
+          });
+        }, READY_TIMEOUT);
 
-      const screenshotPath = path.join(char.dir, 'preview.png');
-      await page.screenshot({ path: screenshotPath, omitBackground: false });
-      console.log(`Preview generated: ${char.name}`);
-    } catch (err) {
-      console.error(`Failed to generate preview for ${char.name}:`, err.message);
-    } finally {
-      await page.close();
-    }
-  }));
+        await new Promise(r => setTimeout(r, RENDER_SETTLE_MS));
 
-  await browser.close();
+        const screenshotPath = path.join(char.dir, 'preview.png');
+        await page.screenshot({ path: screenshotPath, omitBackground: false });
+        console.log(`Preview generated: ${char.name}`);
+      } catch (err) {
+        console.error(`Failed to generate preview for ${char.name}:`, err.message);
+      } finally {
+        await page.close();
+      }
+    }));
+  } finally {
+    await browser.close();
+  }
 }
 
 module.exports = { generatePreviews };

@@ -46,7 +46,7 @@ router.get('/:character', (req, res, next) => {
     defaultAnim: req.query.animation || DEFAULT_ANIMATION,
     loop: parseBoolQuery(req.query.loop),
     touchAnim: req.query.touch || DEFAULT_TOUCH_ANIM,
-    hideBack: req.query.screenshot === '1',
+    screenshot: req.query.screenshot === '1',
     allChars: charNames,
     currentIndex: currentIndex,
     prevChar: currentIndex > 0 ? charNames[currentIndex - 1] : charNames[charNames.length - 1],

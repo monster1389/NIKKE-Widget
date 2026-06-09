@@ -163,9 +163,8 @@
        data-world-height="2400">
   </div>
 
-  <% if (!hideBack) { %>
+  <% if (!screenshot) { %>
   <a class="back-btn" href="/">← 返回</a>
-  <% } %>
 
   <a class="skin-arrow skin-arrow-left" href="/<%= prevChar %>" title="上一个角色">&lt;</a>
   <a class="skin-arrow skin-arrow-right" href="/<%= nextChar %>" title="下一个角色">&gt;</a>
@@ -181,9 +180,11 @@
       <div class="anim-bar" id="anim-bar"></div>
     </div>
   </div>
+  <% } %>
 
   <script src="/public/spine-player/spine-player.js"></script>
   <script src="/public/js/player-core.js"></script>
+  <% if (!screenshot) { %>
   <script>
     var allChars = <%- JSON.stringify(allChars) %>;
     var currentIndex = <%- currentIndex %>;
@@ -320,5 +321,6 @@
       document.addEventListener('mouseup', function() { isDown = false; });
     })();
   </script>
+  <% } %>
 </body>
 </html>

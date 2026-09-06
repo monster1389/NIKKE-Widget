@@ -23,6 +23,47 @@
   ].join('\n');
   document.head.appendChild(style);
 
+  // —— 可选参数（从脚本 URL 的 query 读取）——
+  // initial=hidden|shown : 无记忆/未存值时的初始状态（默认 shown，保持原有行为）
+  // remember=1          : 记住用户开关状态（localStorage，按浏览器/站点隔离）
+  // stateKey=xxx        : 记忆用的 key（默认 live2d-widget-state）
+  var params = {};
+  (scriptEl.src.split('?')[1] || '').split('&').forEach(function (kv) {
+    if (!kv) return;
+    var i = kv.indexOf('=');
+    if (i < 0) {
+      params[decodeURIComponent(kv)] = '1';
+    } else {
+      params[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1));
+    }
+  });
+  var REMEMBER = params.remember && params.remember !== '0' && params.remember !== 'false';
+  var STATE_KEY = params.stateKey || 'live2d-widget-state';
+  var stateHidden = params.initial === 'hidden';
+  if (REMEMBER) {
+    try {
+      var st = localStorage.getItem(STATE_KEY);
+      if (st === 'hidden') stateHidden = true;
+      else if (st === 'shown') stateHidden = false;
+    } catch (e) {}
+  }
+
+  function persistState() {
+    if (!REMEMBER) return;
+    try {
+      localStorage.setItem(STATE_KEY, stateHidden ? 'hidden' : 'shown');
+    } catch (e) {}
+  }
+  function updateButtonsForState() {
+    var c = document.getElementById(CONTAINER_ID);
+    if (c) c.style.display = stateHidden ? 'none' : '';
+    if (closeBtn) closeBtn.style.display = stateHidden ? 'none' : '';
+    if (restoreBtn) restoreBtn.style.display = stateHidden ? '' : 'none';
+    if (randomBtn) randomBtn.style.display = stateHidden ? 'none' : '';
+    if (prevBtn) prevBtn.style.display = stateHidden ? 'none' : '';
+    if (nextBtn) nextBtn.style.display = stateHidden ? 'none' : '';
+  }
+
   var showControls = <%- controls %>;
   var currentCharName = '<%- name %>';
   var characters = [];
@@ -43,13 +84,9 @@
     closeBtn.textContent = '×';
     closeBtn.title = '关闭看板娘';
     closeBtn.onclick = function() {
-      var c = document.getElementById(CONTAINER_ID);
-      if (c) c.style.display = 'none';
-      closeBtn.style.display = 'none';
-      if (randomBtn) randomBtn.style.display = 'none';
-      if (prevBtn) prevBtn.style.display = 'none';
-      if (nextBtn) nextBtn.style.display = 'none';
-      restoreBtn.style.display = '';
+      stateHidden = true;
+      persistState();
+      updateButtonsForState();
     };
     document.body.appendChild(closeBtn);
 
@@ -59,15 +96,14 @@
     restoreBtn.title = '显示看板娘';
     restoreBtn.style.display = 'none';
     restoreBtn.onclick = function() {
-      var c = document.getElementById(CONTAINER_ID);
-      if (c) c.style.display = '';
-      closeBtn.style.display = '';
-      if (randomBtn) randomBtn.style.display = '';
-      if (prevBtn) prevBtn.style.display = '';
-      if (nextBtn) nextBtn.style.display = '';
-      restoreBtn.style.display = 'none';
+      stateHidden = false;
+      persistState();
+      updateButtonsForState();
     };
     document.body.appendChild(restoreBtn);
+
+    // 按钮已建好，按初始/记忆状态套用一次
+    updateButtonsForState();
   }
 
   function findCurrentIndex() {
@@ -142,6 +178,9 @@
       switchToCharacter(characters[nextIdx]);
     };
     document.body.appendChild(nextBtn);
+
+    // 切换按钮属异步插入，按当前状态补一次显隐
+    updateButtonsForState();
   }
 
   function loadCharacterList() {

@@ -26,6 +26,15 @@
   var showControls = <%- controls %>;
   var currentCharName = '<%- name %>';
   var characters = [];
+  // —— 记忆上次选中的角色：
+  // 切角色时写入 localStorage（按浏览器/站点隔离），加载后等列表与播放器就绪再恢复。
+  var savedCharName = null;
+  var wantRestore = false;
+  var playerReady = false;
+  try {
+    savedCharName = localStorage.getItem('live2d-character');
+  } catch (e) {}
+  if (savedCharName && savedCharName !== currentCharName) wantRestore = true;
   var closeBtn, restoreBtn, randomBtn, prevBtn, nextBtn;
 
   if (showControls) {
@@ -72,6 +81,27 @@
     if (!window.Live2DPlayer || !window.Live2DPlayer.switchCharacter) return;
     window.Live2DPlayer.switchCharacter(BASE + target.skel, BASE + target.atlas);
     currentCharName = target.name;
+    try {
+      localStorage.setItem('live2d-character', target.name);
+    } catch (e) {}
+  }
+
+  // 等角色列表与播放器都就绪后，恢复上次选中的角色（只执行一次）
+  function maybeRestoreCharacter() {
+    if (!wantRestore || !playerReady) return;
+    if (characters.length === 0) return;
+    for (var i = 0; i < characters.length; i++) {
+      if (characters[i].name === savedCharName) {
+        wantRestore = false;
+        switchToCharacter(characters[i]);
+        return;
+      }
+    }
+    // 记忆的角色已不在列表中：清掉记忆，保持默认
+    wantRestore = false;
+    try {
+      localStorage.removeItem('live2d-character');
+    } catch (e) {}
   }
 
   function renderSwitchButtons() {
@@ -123,6 +153,7 @@
       .then(function(list) {
         characters = list;
         renderSwitchButtons();
+        maybeRestoreCharacter();
       })
       .catch(function(err) {
         console.warn('Live2D embed: failed to load character list', err);
@@ -172,6 +203,14 @@
     container.dataset.sendSize = 'true';
 
     <%- playerCoreJs %>
+
+    // 播放器就绪后再尝试恢复上次角色；角色列表若稍后才到，会在加载成功后补一次
+    if (window.Live2DPlayer && window.Live2DPlayer.on) {
+      window.Live2DPlayer.on('onReady', function() {
+        playerReady = true;
+        maybeRestoreCharacter();
+      });
+    }
   }
 
   if (window.spine) {
